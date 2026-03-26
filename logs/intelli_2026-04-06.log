@@ -1,0 +1,42 @@
+2026-04-06 22:38:27 | INFO     | logger:<module>:25 - Logger initialized
+2026-04-06 22:38:29 | INFO     | __main__:<module>:4 - Testing imports...
+2026-04-06 22:38:29 | INFO     | __main__:<module>:6 - Found 32 microphones
+2026-04-06 22:39:30 | INFO     | logger:<module>:25 - Logger initialized
+2026-04-06 22:39:32 | INFO     | __main__:start:14 - Starting INTELLI AI Assistant...
+2026-04-06 22:39:32 | INFO     | __main__:start:17 - Eel initialized
+2026-04-06 22:39:33 | INFO     | features:playAssistantSound:36 - Assistant sound played
+2026-04-06 22:39:33 | INFO     | __main__:start:20 - Assistant sound played
+2026-04-06 22:39:33 | INFO     | __main__:start:24 - Browser opened
+2026-04-06 22:41:36 | INFO     | logger:<module>:25 - Logger initialized
+2026-04-06 22:42:29 | INFO     | logger:<module>:25 - Logger initialized
+2026-04-06 22:42:29 | INFO     | command:test_microphone:94 - Testing microphone index: 1
+2026-04-06 22:42:29 | INFO     | command:test_microphone:99 - Microphone test successful
+2026-04-06 22:47:21 | INFO     | logger:<module>:25 - Logger initialized
+2026-04-06 22:47:23 | INFO     | __main__:start:14 - Starting INTELLI AI Assistant...
+2026-04-06 22:47:23 | INFO     | __main__:start:17 - Eel initialized
+2026-04-06 22:47:23 | INFO     | features:playAssistantSound:36 - Assistant sound played
+2026-04-06 22:47:23 | INFO     | __main__:start:20 - Assistant sound played
+2026-04-06 22:47:23 | INFO     | __main__:start:24 - Browser opened
+2026-04-06 22:47:40 | INFO     | command:test_microphone:94 - Testing microphone index: 2
+2026-04-06 22:47:41 | INFO     | command:test_microphone:99 - Microphone test successful
+2026-04-06 22:47:50 | INFO     | command:save_settings:42 - Settings saved
+2026-04-06 22:47:50 | INFO     | command:set_mic_index:82 - Microphone index set to: 2
+2026-04-06 22:47:50 | INFO     | command:save_settings:42 - Settings saved
+2026-04-06 22:47:50 | INFO     | command:set_speech_rate:89 - Speech rate set to: 174
+2026-04-06 22:48:20 | INFO     | features:playAssistantSound:36 - Assistant sound played
+2026-04-06 22:48:20 | INFO     | command:takecommand:132 - Using microphone index: 2
+2026-04-06 22:48:20 | INFO     | command:takecommand:138 - Listening...
+2026-04-06 22:48:36 | INFO     | command:takecommand:160 - Recognizing speech...
+2026-04-06 22:48:37 | INFO     | command:takecommand:166 - User said: how is the weather in Delhi
+2026-04-06 22:48:39 | INFO     | command:allCommands:194 - Processing command: how is the weather in delhi
+2026-04-06 22:48:39 | ERROR    | command:allCommands:442 - Error processing command: 'NoneType' object has no attribute 'text'
+2026-04-06 22:48:44 | INFO     | command:allCommands:194 - Processing command: hows the weather 
+2026-04-06 22:48:44 | ERROR    | command:allCommands:442 - Error processing command: 'NoneType' object has no attribute 'text'
+2026-04-06 22:48:49 | INFO     | command:allCommands:194 - Processing command: hello 
+2026-04-06 22:49:12 | INFO     | command:allCommands:194 - Processing command: hows the weather 
+2026-04-06 22:49:12 | ERROR    | command:allCommands:442 - Error processing command: 'NoneType' object has no attribute 'text'
+2026-04-06 22:51:06 | INFO     | logger:<module>:25 - Logger initialized
+2026-04-06 22:51:06 | INFO     | command:load_settings:32 - Settings loaded: mic=2, rate=174
+2026-04-06 22:51:06 | ERROR    | command:speak:121 - TTS Error: module 'eel' has no attribute 'DisplayMessage'
+2026-04-06 22:51:15 | INFO     | logger:<module>:25 - Logger initialized
+2026-04-06 22:51:18 | INFO     | command:load_settings:32 - Settings loaded: mic=2, rate=174

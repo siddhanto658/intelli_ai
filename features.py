@@ -20,13 +20,15 @@ import pvporcupine
 from helper import extract_yt_term, remove_words
 from hugchat import hugchat
 
-try:
-    con = sqlite3.connect("INTELLI.db")
-    cursor = con.cursor()
-except Exception as e:
-    logger.error(f"Database connection error: {e}")
-    con = None
-    cursor = None
+def get_db_connection():
+    try:
+        conn = sqlite3.connect("INTELLI.db")
+        return conn, conn.cursor()
+    except Exception as e:
+        logger.error(f"Database connection error: {e}")
+        return None, None
+
+con, cursor = get_db_connection()
 
 @eel.expose
 def playAssistantSound():
@@ -41,7 +43,7 @@ def playAssistantSound():
 def openCommand(query):
     query = query.replace(ASSISTANT_NAME, "")
     query = query.replace("open", "")
-    query.lower()
+    query = query.lower()
 
     app_name = query.strip()
 
@@ -99,18 +101,22 @@ def searchGoogle(query):
             speak("No speakable output available")
             
 def greetuser():
-    current_time = datetime.datetime.now()
-    hour = current_time.hour
-    minute = current_time.minute
-    print("Current time: ", hour, ":", minute)
-    if hour>=0 and hour<12:
-        speak("Good Morning")
-    elif hour >=12 and hour<=17:
-        speak("Good Afternoon ")
-    else:
-        speak("Good Evening")
-    speak("Please tell me, How can I help you?")
-    
+    try:
+        current_time = datetime.datetime.now()
+        hour = current_time.hour
+        minute = current_time.minute
+        print("Current time: ", hour, ":", minute)
+        if hour >= 0 and hour < 12:
+            speak("Good Morning")
+        elif hour >= 12 and hour <= 17:
+            speak("Good Afternoon")
+        else:
+            speak("Good Evening")
+        speak("Please tell me, How can I help you?")
+    except Exception as e:
+        logger.error(f"Error in greetuser: {e}")
+        speak("Hello! How can I help you?")
+
 def PlayYoutube(query):
     search_term = extract_yt_term(query)
     speak("Playing "+search_term+" on YouTube")
@@ -169,6 +175,11 @@ def findContact(query):
         query = query.strip().lower()
         cursor.execute("SELECT mobile_no FROM contacts WHERE LOWER(name) LIKE ? OR LOWER(name) LIKE ?", ('%' + query + '%', query + '%'))
         results = cursor.fetchall()
+        
+        if not results or len(results) == 0:
+            speak('Contact not found in database')
+            return 0, 0
+            
         print(results[0][0])
         mobile_number_str = str(results[0][0])
 
@@ -176,49 +187,54 @@ def findContact(query):
             mobile_number_str = '+91' + mobile_number_str
 
         return mobile_number_str, query
-    except:
+    except Exception as e:
+        logger.error(f"Error finding contact: {e}")
         speak('not exist in contacts')
         return 0, 0
     
 def whatsApp(mobile_no, message, flag, name):
     
+    if mobile_no == 0:
+        logger.warning("WhatsApp called with invalid mobile number")
+        speak("Contact not found. Please try again.")
+        return
 
-    if flag == 'message':
-        target_tab = 12
-        INTELLI_message = "message send successfully to "+name
+    try:
+        if flag == 'message':
+            target_tab = 12
+            INTELLI_message = "message send successfully to "+name
 
-    elif flag == 'call':
-        target_tab = 7
-        message = ''
-        INTELLI_message = "calling to "+name
+        elif flag == 'call':
+            target_tab = 7
+            message = ''
+            INTELLI_message = "calling to "+name
 
-    else:
-        target_tab = 6
-        message = ''
-        INTELLI_message = "staring video call with "+name
+        else:
+            target_tab = 6
+            message = ''
+            INTELLI_message = "starting video call with "+name
 
 
-    # Encode the message for URL
-    encoded_message = quote(message)
-    print(encoded_message) 
-    # Construct the URL
-    whatsapp_url = f"whatsapp://send?phone={mobile_no}&text={encoded_message}"
+        encoded_message = quote(message)
+        print(encoded_message) 
+        whatsapp_url = f"whatsapp://send?phone={mobile_no}&text={encoded_message}"
 
-    # Construct the full command
-    full_command = f'start "" "{whatsapp_url}"'
+        full_command = f'start "" "{whatsapp_url}"'
 
-    # Open WhatsApp with the constructed URL using cmd.exe
-    subprocess.run(full_command, shell=True)
-    time.sleep(5)
-    subprocess.run(full_command, shell=True)
-    
-    pyautogui.hotkey('ctrl', 'f')
+        subprocess.run(full_command, shell=True)
+        time.sleep(5)
+        subprocess.run(full_command, shell=True)
+        
+        pyautogui.hotkey('ctrl', 'f')
 
-    for i in range(1, target_tab):
-        pyautogui.hotkey('tab')
+        for i in range(1, target_tab):
+            pyautogui.hotkey('tab')
 
-    pyautogui.hotkey('enter')
-    speak(INTELLI_message)
+        pyautogui.hotkey('enter')
+        speak(INTELLI_message)
+    except Exception as e:
+        logger.error(f"WhatsApp error: {e}")
+        speak("Sorry, I couldn't complete the WhatsApp action. Please try again.")
 
 # chat bot 
 def chatBot(query):

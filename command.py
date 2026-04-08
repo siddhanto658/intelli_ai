@@ -45,15 +45,6 @@ def save_settings():
 
 load_settings()
 
-def get_available_mics():
-    mics = []
-    try:
-        for i, microphone in enumerate(sr.Microphone.list_microphone_names()):
-            mics.append({"index": i, "name": microphone})
-    except Exception as e:
-        logger.error(f"Error getting microphones: {e}")
-    return mics
-
 def set_mic_index(index):
     global selected_mic_index
     selected_mic_index = index
@@ -73,20 +64,6 @@ def get_available_mics():
     except Exception as e:
         logger.error(f"Error getting microphones: {e}")
     return mics
-
-@eel.expose
-def set_mic_index(index):
-    global selected_mic_index
-    selected_mic_index = index
-    save_settings()
-    logger.info(f"Microphone index set to: {index}")
-
-@eel.expose
-def set_speech_rate(rate):
-    global speech_rate
-    speech_rate = rate
-    save_settings()
-    logger.info(f"Speech rate set to: {rate}")
 
 @eel.expose
 def test_microphone(index):
@@ -110,13 +87,17 @@ def speak(text):
     try:
         text = str(text)
         engine = pyttsx3.init('sapi5')
-        voices = engine.getProperty('voices') 
-        engine.setProperty('voice', voices[1].id)
+        voices = engine.getProperty('voices')
+        
+        voice_id = voices[1].id if len(voices) > 1 else voices[0].id
+        engine.setProperty('voice', voice_id)
         engine.setProperty('rate', speech_rate)
+        
         eel.DisplayMessage(text)
         engine.say(text)
         eel.receiverText(text)
         engine.runAndWait()
+        engine.stop()
     except Exception as e:
         logger.error(f"TTS Error: {e}")
         eel.DisplayMessage(text)
@@ -191,6 +172,11 @@ def allCommands(message=1):
             query = message
             eel.senderText(query)
         
+        if not query:
+            logger.warning("Empty query received")
+            eel.DisplayMessage("No command detected")
+            return
+            
         logger.info(f"Processing command: {query}")
 
         if "open" in query:

@@ -1,18 +1,13 @@
 import eel
-import pyttsx3
-from command import takecommand, speech_rate, logger
+from command import takecommand, speak
 
-def speak(text):
+
+def _safe_index_from_voice():
+    spoken_value = takecommand()
     try:
-        text = str(text)
-        engine = pyttsx3.init('sapi5')
-        voices = engine.getProperty('voices') 
-        engine.setProperty('voice', voices[1].id)
-        engine.setProperty('rate', speech_rate)
-        engine.say(text)
-        engine.runAndWait()
-    except Exception as e:
-        logger.error(f"TTS error in task.py: {e}")
+        return int(spoken_value) - 1
+    except (TypeError, ValueError):
+        return None
 
 # Initialize an empty list to store tasks
 tasks = []
@@ -54,14 +49,18 @@ def update_task():
         if tasks:  
             eel.DisplayMessage("Please tell the index of your task!")
             speak("Please tell the index of your task!")
-            task_index = int(input(takecommand())) - 1
+            task_index = _safe_index_from_voice()
+            if task_index is None:
+                eel.DisplayMessage("Invalid task index.")
+                speak("Invalid task index.")
+                return
             if 0 <= task_index < len(tasks):
                 eel.DisplayMessage("Please tell the new title of your task!")
                 speak("Please tell the new title of your task!")
-                new_title = input(takecommand())
+                new_title = takecommand()
                 eel.DisplayMessage("Please tell the new description of your task!")
                 speak("Please tell the new description of your task!")
-                new_description = input(takecommand())
+                new_description = takecommand()
                 if new_title:
                     tasks[task_index]['title'] = new_title
                 if new_description:
@@ -75,7 +74,7 @@ def update_task():
                 speak("Invalid task index.")
         else:
             print("No tasks available.")
-            eel.DisplayMessage("No tasks available.")
+            eel.DisplayMessage("No tasks availiable.")
             speak("No tasks available.")
 # update_task()
 # Function to delete a task
@@ -85,7 +84,11 @@ def delete_task():
             print("Please tell the index number of the task to delete!")
             eel.DisplayMessage("Please tell the index number of the task to delete!")
             speak("Please tell the index number of the task to delete!")
-            task_index = int(input(takecommand())) - 1
+            task_index = _safe_index_from_voice()
+            if task_index is None:
+                eel.DisplayMessage("Invalid task index.")
+                speak("Invalid task index.")
+                return
             if 0 <= task_index < len(tasks):
                 deleted_task = tasks.pop(task_index)
                 print(f"Task '{deleted_task['title']}' deleted successfully!")
@@ -97,7 +100,7 @@ def delete_task():
                 speak("Invalid task index.")
         else:
             print("No tasks available.")
-            eel.DisplayMessage("No tasks available.")
+            eel.DisplayMessage("No tasks availiable.")
             speak("No tasks available.")
 # delete_task()
 # Main loop

@@ -1,5 +1,7 @@
-/envjarvis
-contacts.csv
-jarvis.db
-# /engine/__pycache__
-# /engine/cookies.json
+.venv
+venv
+__pycache__
+.env
+INTELLI.db
+*.pyc
+*.jpg

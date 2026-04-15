@@ -1,152 +1,96 @@
 import csv
+import os
 import sqlite3
 
-con = sqlite3.connect("INTELLI.db")
-cursor = con.cursor()
 
-query = "CREATE TABLE IF NOT EXISTS sys_command(id integer primary key, name VARCHAR(100), path VARCHAR(1000))"
-cursor.execute(query)
+def init_database(db_path="INTELLI.db", contacts_csv_path="contacts.csv"):
+    con = sqlite3.connect(db_path)
+    cursor = con.cursor()
 
-# Insert system commands with error handling for duplicates
-try:
-    query = "INSERT INTO sys_command VALUES (null,'one note', 'C:\\Program Files\\Microsoft Office\\root\\Office16\\ONENOTE.exe')"
-    cursor.execute(query)
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS sys_command(
+            id INTEGER PRIMARY KEY,
+            name VARCHAR(100) UNIQUE,
+            path VARCHAR(1000)
+        )
+        """
+    )
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS web_command(
+            id INTEGER PRIMARY KEY,
+            name VARCHAR(100) UNIQUE,
+            url VARCHAR(1000)
+        )
+        """
+    )
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS contacts(
+            id INTEGER PRIMARY KEY,
+            name VARCHAR(200),
+            mobile_no VARCHAR(255),
+            email VARCHAR(255) NULL
+        )
+        """
+    )
+
+    sys_seed = [
+        ("one note", r"C:\Program Files\Microsoft Office\root\Office16\ONENOTE.exe"),
+        ("whattsApp", r"C:\Program Files\Microsoft Office\root\Office16\ONENOTE.exe"),
+        ("chrome", r"C:\Program Files\Google\Chrome\Application\CHROME.exe"),
+        ("vlc", r"C:\Program Files\VideoLAN\VLC.exe"),
+        ("far cry 6", r"C:\Games\Far Cry 6\bin\FARCRY6.exe"),
+        ("assassins creed 3", r"C:\Games\Assassins Creed III.exe"),
+    ]
+    cursor.executemany(
+        "INSERT OR IGNORE INTO sys_command(name, path) VALUES (?, ?)",
+        sys_seed,
+    )
+
+    web_seed = [
+        ("flipkart", "https://www.flipkart.com/"),
+        ("youtube", "https://www.youtube.com/"),
+        ("amazon", "https://www.amazon.in/"),
+        ("netflix", "https://www.netflix.com/in/"),
+        ("geeksforgeeks", "https://www.geeksforgeeks.org/"),
+        ("javatpoint", "https://www.javatpoint.com/"),
+        ("hindustan times", "https://www.hindustantimes.com/"),
+    ]
+    cursor.executemany(
+        "INSERT OR IGNORE INTO web_command(name, url) VALUES (?, ?)",
+        web_seed,
+    )
+
+    if os.path.exists(contacts_csv_path):
+        with open(contacts_csv_path, "r", encoding="utf-8") as csvfile:
+            csvreader = csv.reader(csvfile)
+            for row in csvreader:
+                if len(row) <= 32:
+                    continue
+                name = row[0].strip()
+                mobile_no = row[32].strip()
+                if not name or not mobile_no:
+                    continue
+                cursor.execute(
+                    """
+                    INSERT INTO contacts(name, mobile_no)
+                    SELECT ?, ?
+                    WHERE NOT EXISTS(
+                        SELECT 1 FROM contacts WHERE name = ? AND mobile_no = ?
+                    )
+                    """,
+                    (name, mobile_no, name, mobile_no),
+                )
+
     con.commit()
-except:
-    pass
-
-try:
-    query = "INSERT INTO sys_command VALUES (null,'whatsapp', 'C:\\Program Files\\Microsoft Office\\root\\Office16\\ONENOTE.exe')"
-    cursor.execute(query)
-    con.commit()
-except:
-    pass
-
-try:
-    query = "INSERT INTO sys_command VALUES (null,'chrome', 'C:\\Program Files\\Google\\Chrome\\Application\\CHROME.exe')"
-    cursor.execute(query)
-    con.commit()
-except:
-    pass
-
-try:
-    query = "INSERT INTO sys_command VALUES (null,'vlc', 'C:\\Program Files\\VideoLAN\\VLC.exe')"
-    cursor.execute(query)
-    con.commit()
-except:
-    pass
-
-try:
-    query = "INSERT INTO sys_command VALUES (null,'far cry 6', 'C:\\Games\\Far Cry 6\\bin\\FARCRY6.exe')"
-    cursor.execute(query)
-    con.commit()
-except:
-    pass
-
-try:
-    query = "INSERT INTO sys_command VALUES (null,'assassins creed 3', 'C:\\Games\\Assassins Creed III.exe')"
-    cursor.execute(query)
-    con.commit()
-except:
-    pass
-
-# query = "INSERT INTO sys_command VALUES (null,'Telegram', 'C:\\Program Files\\Microsoft Office\\root\Office16\\ONENOTE.exe')"
-# cursor.execute(query)
-# con.commit()
+    con.close()
 
 
-query = "CREATE TABLE IF NOT EXISTS web_command(id integer primary key, name VARCHAR(100), url VARCHAR(1000))"
-cursor.execute(query)
-
-try:
-    query = "INSERT INTO web_command VALUES (null,'flipkart', 'https://www.flipkart.com/')"
-    cursor.execute(query)
-    con.commit()
-except:
-    pass
-
-try:
-    query = "INSERT INTO web_command VALUES (null,'amazon', 'https://www.amazon.in/')"
-    cursor.execute(query)
-    con.commit()
-except:
-    pass
-
-try:
-    query = "INSERT INTO web_command VALUES (null,'netflix', 'https://www.netflix.com/in/')"
-    cursor.execute(query)
-    con.commit()
-except:
-    pass
-
-try:
-    query = "INSERT INTO web_command VALUES (null,'geeksforgeeks', 'https://www.geeksforgeeks.org/')"
-    cursor.execute(query)
-    con.commit()
-except:
-    pass
-
-try:
-    query = "INSERT INTO web_command VALUES (null,'javatpoint', 'https://www.javatpoint.com/')"
-    cursor.execute(query)
-    con.commit()
-except:
-    pass
-
-try:
-    query = "INSERT INTO web_command VALUES (null, 'hindustan times', 'https://www.hindustantimes.com/')"
-    cursor.execute(query)
-    con.commit()
-except:
-    pass
-
-# query = "INSERT INTO web_command VALUES (null,'xvideos', 'https://www.xvideos.com/')"
-# cursor.execute(query)
-# con.commit()
-
-
-
-# testing module
-app_name = "android studio"
-cursor.execute('SELECT path FROM sys_command WHERE name = ?', (app_name,))
-results = cursor.fetchmany(1)
-if results:
-    print(results[0][0])
-else:
-    print("No matching rows found.")
-
-# Create a table with the desired columns
-cursor.execute('''CREATE TABLE IF NOT EXISTS contacts (id integer primary key, name VARCHAR(200), mobile_no VARCHAR(255), email VARCHAR(255) NULL)''')
-
-# Read data from CSV if file exists
-import os
-if os.path.exists('contacts.csv'):
-    desired_columns_indices = [0, 1]  # name, mobile_no columns
-    
-    with open('contacts.csv', 'r', encoding='utf-8') as csvfile:
-        csvreader = csv.reader(csvfile)
-        next(csvreader)  # Skip header if exists
-        for row in csvreader:
-            if len(row) >= 2:
-                selected_data = [row[i] for i in desired_columns_indices]
-                cursor.execute(''' INSERT INTO contacts (id, 'name', 'mobile_no') VALUES (null, ?, ?);''', tuple(selected_data))
-
-# Commit changes and close connection
-con.commit()
-con.close()
-
-print("Database initialized successfully!")
-con.close()
-
-# query = "INSERT INTO contacts VALUES (null,'pawan', '1234567890', 'null')"
-# cursor.execute(query)
-# con.commit()
-
-# query = 'kunal'
-# query = query.strip().lower()
-
-# cursor.execute("SELECT mobile_no FROM contacts WHERE LOWER(name) LIKE ? OR LOWER(name) LIKE ?", ('%' + query + '%', query + '%'))
-# results = cursor.fetchall()
-# print(results[0][0])
+if __name__ == "__main__":
+    init_database()
 
 

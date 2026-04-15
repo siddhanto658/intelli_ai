@@ -1,0 +1,19 @@
+2026-04-15 18:29:59 | INFO     | logger:<module>:25 - Logger initialized
+2026-04-15 18:30:05 | INFO     | command:load_settings:32 - Settings loaded: mic=2, rate=174
+2026-04-15 18:30:05 | INFO     | main:start:14 - Starting INTELLI AI Assistant...
+2026-04-15 18:30:05 | INFO     | logger:<module>:25 - Logger initialized
+2026-04-15 18:30:05 | INFO     | command:load_settings:32 - Settings loaded: mic=2, rate=174
+2026-04-15 18:30:05 | INFO     | main:start:17 - Eel initialized
+2026-04-15 18:30:05 | INFO     | features:playAssistantSound:38 - Assistant sound played
+2026-04-15 18:30:05 | INFO     | main:start:20 - Assistant sound played
+2026-04-15 18:30:06 | INFO     | main:start:24 - Browser opened
+2026-04-15 18:36:27 | INFO     | logger:<module>:25 - Logger initialized
+2026-04-15 18:36:32 | INFO     | command:load_settings:32 - Settings loaded: mic=2, rate=174
+2026-04-15 18:36:32 | INFO     | __main__:start:14 - Starting INTELLI AI Assistant...
+2026-04-15 18:36:32 | INFO     | __main__:start:17 - Eel initialized
+2026-04-15 18:36:32 | INFO     | features:playAssistantSound:38 - Assistant sound played
+2026-04-15 18:36:32 | INFO     | __main__:start:20 - Assistant sound played
+2026-04-15 18:36:32 | INFO     | __main__:start:24 - Browser opened
+2026-04-15 18:36:38 | INFO     | command:allCommands:180 - Processing command: hey
+2026-04-15 18:36:38 | INFO     | features:chatBot:243 - ChatBot query: hey
+2026-04-15 18:36:45 | ERROR    | features:chatBot:254 - ChatBot error: Failed to create new conversation with status code: 200. Error: Expecting value: line 1 column 1 (char 0). Retries: 6.

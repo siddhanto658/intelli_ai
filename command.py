@@ -1,457 +1,196 @@
 import datetime
-import os
-import random
-import webbrowser
-from bs4 import BeautifulSoup
 import pyautogui
-import pyttsx3
-import requests
 import speech_recognition as sr
 import eel
 import time
-import speedtest_cli
-from HandGesture import Handgesture
+try:
+    from HandGesture import Handgesture
+except Exception as e:
+    print(f"Warning: HandGesture module failed to load. Hand gestures disabled. {e}")
+    Handgesture = None
 from config import ASSISTANT_NAME
 from helper import remove_words
-import pywhatkit as kit
-from logger import logger
-import traceback
+from intelli.core.capabilities import detect_capabilities
+from intelli.core.platform import PlatformAdapter
+from intelli.core.router import IntentRouter
+from intelli.core.safety import ask_voice_permission
+from intelli.core.speech import create_tts_engine, speak_text
+from intelli.core.brain import HybridBrain
+from intelli.core.memory import MemoryManager
+from intelli.handlers.basic import BasicHandlers
+from intelli.handlers.media_info import MediaInfoHandlers
+from intelli.handlers.registry import build_router
+from intelli.handlers.social import SocialHandlers
+from intelli.handlers.utility import UtilityHandlers
 
-selected_mic_index = 0
-speech_rate = 174
+# from calculate import Calc
 
-def load_settings():
-    global selected_mic_index, speech_rate
-    try:
-        import json
-        if os.path.exists("settings.json"):
-            with open("settings.json", "r") as f:
-                settings = json.load(f)
-                selected_mic_index = settings.get("mic_index", 0)
-                speech_rate = settings.get("speech_rate", 174)
-                logger.info(f"Settings loaded: mic={selected_mic_index}, rate={speech_rate}")
-    except Exception as e:
-        logger.warning(f"Could not load settings: {e}")
+platform_adapter = PlatformAdapter()
+_tts_engine = create_tts_engine()
+intent_router = IntentRouter()
+_capabilities = detect_capabilities(platform_adapter)
 
-def save_settings():
-    try:
-        import json
-        settings = {"mic_index": selected_mic_index, "speech_rate": speech_rate}
-        with open("settings.json", "w") as f:
-            json.dump(settings, f)
-        logger.info("Settings saved")
-    except Exception as e:
-        logger.warning(f"Could not save settings: {e}")
+ai_brain = HybridBrain()
+ai_memory = MemoryManager()
 
-load_settings()
-
-def set_mic_index(index):
-    global selected_mic_index
-    selected_mic_index = index
-    save_settings()
-
-def set_speech_rate(rate):
-    global speech_rate
-    speech_rate = rate
-    save_settings()
-
-@eel.expose
-def get_available_mics():
-    mics = []
-    try:
-        for i, microphone in enumerate(sr.Microphone.list_microphone_names()):
-            mics.append({"index": i, "name": microphone})
-    except Exception as e:
-        logger.error(f"Error getting microphones: {e}")
-    return mics
-
-@eel.expose
-def test_microphone(index):
-    try:
-        logger.info(f"Testing microphone index: {index}")
-        r = sr.Recognizer()
-        mic = sr.Microphone(device_index=index)
-        with mic as source:
-            r.adjust_for_ambient_noise(source, duration=0.5)
-        logger.info("Microphone test successful")
-        return "success"
-    except Exception as e:
-        logger.error(f"Microphone test failed: {e}")
-        return "failed"
-
-@eel.expose
-def get_settings():
-    return {"mic_index": selected_mic_index, "speech_rate": speech_rate}
 
 def speak(text):
+    text = str(text)
+    eel.DisplayMessage(text)
+    eel.receiverText(text)
+    speak_text(text, _tts_engine)
+
+
+def _spoken_number_to_int(text):
     try:
-        text = str(text)
-        engine = pyttsx3.init('sapi5')
-        voices = engine.getProperty('voices')
-        
-        voice_id = voices[1].id if len(voices) > 1 else voices[0].id
-        engine.setProperty('voice', voice_id)
-        engine.setProperty('rate', speech_rate)
-        
-        eel.DisplayMessage(text)
-        engine.say(text)
-        eel.receiverText(text)
-        engine.runAndWait()
-        engine.stop()
-    except Exception as e:
-        logger.error(f"TTS Error: {e}")
-        eel.DisplayMessage(text)
+        return int(text)
+    except ValueError:
+        pass
+
+    word_map = {
+        "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4,
+        "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10
+    }
+    return word_map.get(text.strip().lower())
+
 
 def takecommand():
 
     r = sr.Recognizer()
-    r.dynamic_energy_threshold = True
-    r.energy_threshold = 4000
 
-    try:
-        microphone = sr.Microphone(device_index=selected_mic_index)
-        logger.info(f"Using microphone index: {selected_mic_index}")
-    except Exception as e:
-        logger.warning(f"Could not use selected mic, using default: {e}")
-        microphone = sr.Microphone()
-
-    with microphone as source:
-        logger.info("Listening...")
+    with sr.Microphone() as source:
         print('listening....')
         eel.DisplayMessage('listening....')
-        r.pause_threshold = 1.5
-        r.dynamic_energy_threshold = True
+        r.pause_threshold = 1
+        r.adjust_for_ambient_noise(source)
         
-        try:
-            r.adjust_for_ambient_noise(source, duration=1)
-        except Exception as e:
-            logger.warning(f"Could not adjust for ambient noise: {e}")
-        
-        try:
-            audio = r.listen(source, timeout=10, phrase_time_limit=15)
-        except sr.WaitTimeoutError:
-            logger.info("No speech detected within timeout")
-            eel.DisplayMessage("No speech detected")
-            return ""
-        except Exception as e:
-            logger.error(f"Error listening: {e}")
-            return ""
+        audio = r.listen(source, 10, 6)
 
     try:
-        logger.info("Recognizing speech...")
         print('recognizing')
         eel.DisplayMessage('recognizing....')
         query = r.recognize_google(audio, language='en-in')
         print(f"user said: {query}")
         eel.DisplayMessage(query)
-        logger.info(f"User said: {query}")
         time.sleep(2)
        
-    except sr.UnknownValueError:
-        logger.warning("Could not understand audio")
-        eel.DisplayMessage("Could not understand. Please try again.")
-        return ""
-    except sr.RequestError as e:
-        logger.error(f"Speech recognition service error: {e}")
-        eel.DisplayMessage("Speech service unavailable. Please check internet connection.")
-        return ""
     except Exception as e:
-        logger.error(f"Error in speech recognition: {e}")
         return ""
     
     return query.lower()
 
+
+def _check_permission(action_name: str) -> bool:
+    return ask_voice_permission(action_name, speak, takecommand)
+
+
+_basic_handlers = BasicHandlers(
+    speak=speak,
+    takecommand=takecommand,
+    platform_adapter=platform_adapter,
+    pyautogui_module=pyautogui,
+    permission_checker=_check_permission,
+)
+_utility_handlers = UtilityHandlers(
+    speak=speak,
+    takecommand=takecommand,
+    spoken_number_to_int=_spoken_number_to_int,
+    eel_module=eel,
+    remove_words=remove_words,
+    assistant_name=ASSISTANT_NAME,
+)
+_social_handlers = SocialHandlers(
+    speak=speak,
+    takecommand=takecommand,
+    permission_checker=_check_permission,
+    brain=ai_brain,
+    memory=ai_memory,
+)
+from intelli.handlers.generation import GenerationHandlers
+
+from intelli.handlers.communications import CommunicationsHandlers
+
+_media_info_handlers = MediaInfoHandlers(
+    speak=speak,
+    takecommand=takecommand,
+    eel_module=eel,
+    pyautogui_module=pyautogui,
+    handgesture_func=Handgesture,
+    platform_adapter=platform_adapter,
+    permission_checker=_check_permission,
+)
+_generation_handlers = GenerationHandlers(
+    speak=speak,
+    brain=ai_brain,
+)
+_communications_handlers = CommunicationsHandlers(
+    speak=speak,
+    takecommand=takecommand,
+    permission_checker=_check_permission,
+    platform_adapter=platform_adapter,
+    assistant_name=ASSISTANT_NAME,
+)
+build_router(
+    intent_router,
+    _basic_handlers,
+    _utility_handlers,
+    _social_handlers,
+    _media_info_handlers,
+    _generation_handlers,
+    _communications_handlers,
+)
+
 @eel.expose
 def allCommands(message=1):
+
+    if message == 1:
+        query = takecommand()
+        print(query)
+        eel.senderText(query)
+    else:
+        query = message
+        eel.senderText(query)
     try:
-        if message == 1:
-            query = takecommand()
-            print(query)
-            eel.senderText(query)
-        else:
-            query = message
-            eel.senderText(query)
-        
-        if not query:
-            logger.warning("Empty query received")
-            eel.DisplayMessage("No command detected")
+        if intent_router.dispatch(query):
+            eel.ShowHood()
             return
-            
-        logger.info(f"Processing command: {query}")
-
-        if "open" in query:
-            from features import openCommand
-            openCommand(query)
-
-        elif "launch" in query:
-                        query = query.replace("launch","")
-                        query = query.replace("intelli","")
-                        speak("Launching " +(query))
-                        pyautogui.press("super")
-                        pyautogui.typewrite(query)
-                        pyautogui.sleep(2)
-                        pyautogui.press("enter") 
-
-        elif "on youtube" in query:
-            from features import PlayYoutube
-            PlayYoutube(query)
-
-        elif "hello" in query or "hii" in query or "good morning" in query or "good afternoon" in query or "good evening" in query:
-            from features import greetuser
-            greetuser()
-
-        elif "your name" in query:
-            speak("My name is INTELLI, How can I help you today!")
-            eel.display("My name is INTELLI, How can I help you today!")
-
-        elif "google" in query:
-            from features import searchGoogle
-            searchGoogle(query)
-        
-        elif "how are you" in query or "how r u" in query:
-            speak("I'm Doing great!, Just hanging out in the cloud, eagerly awaiting the next question or conversation. How’s your day going so far?!")
-            eel.display("I'm Doing great!, Just hanging out in the cloud, eagerly awaiting the next question or conversation. How’s your day going so far?!")
-
-        elif "introduce yourself" in query:
-            speak("Sure!!  Hey there, everyone! My name is INTELLI, and I’m an AI designed to be a friendly and helpful conversation partner. You can think of me as a digital assistant that you can chat with about pretty much anything. I’m here to help! ")
-            eel.display("Sure!!  Hey there, everyone! My name is INTELLI, and I’m an AI designed to be a friendly and helpful conversation partner. You can think of me as a digital assistant that you can chat with about pretty much anything. I’m here to help! ")
-        
-        elif "your birthday" in query or "you born" in query:
-            speak("I don't really have a birthday since I wasn't born in the traditional sense. I was created by a group of 5 engineering students, and they may have a specific date when I was activated or started running, but I don't have that information. But I can help you to do your tasks better!")
-            eel.display("I don't really have a birthday since I wasn't born in the traditional sense. I was created by a group of 5 engineering students, and they may have a specific date when I was activated or started running, but I don't have that information. But I can help you to do your tasks better!")
-       
-        elif "temperature" in query:
-            try:
-                # Extract location from query
-                location = query.replace("temperature", "").replace("in", "").replace("what is", "").strip()
-                if not location:
-                    location = "delhi"
-                
-                # Use wttr.in for weather (free, no API key)
-                url = f"https://wttr.in/{location}?format=%t"
-                r = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
-                r.encoding = 'utf-8'
-                if r.status_code == 200:
-                    temp = r.text.strip()
-                    if "cuttack" in query.lower() or "cuttack" in location.lower():
-                        speak(f"Current temperature here is {temp}")
-                    else:
-                        speak(f"Current temperature in {location} is {temp}")
-                else:
-                    speak(f"Sorry, I couldn't find temperature for {location}")
-            except Exception as e:
-                logger.error(f"Temperature error: {e}")
-                speak("Sorry, I couldn't fetch the temperature right now.")
-
-        elif "weather" in query:
-            try:
-                # Extract location from query
-                location = query.replace("weather", "").replace("in", "").replace("what is", "").strip()
-                if not location:
-                    location = "delhi"
-                
-                # Use wttr.in for weather (free, no API key)
-                url = f"https://wttr.in/{location}?format=%c+%t"
-                r = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
-                r.encoding = 'utf-8'
-                if r.status_code == 200:
-                    weather = r.text.strip()
-                    if "cuttack" in query.lower() or "cuttack" in location.lower():
-                        speak(f"Current weather here: {weather}")
-                    else:
-                        speak(f"Current weather in {location}: {weather}")
-                else:
-                    speak(f"Sorry, I couldn't find weather for {location}")
-            except Exception as e:
-                logger.error(f"Weather error: {e}")
-                speak("Sorry, I couldn't fetch the weather right now.")
-
-        elif "speed test" in query or "internet speed" in query:
-             wifi = speedtest_cli.Speedtest()
-             upload_net = wifi.upload()/1048576
-             download_net = wifi.download()/1048576
-             upload_net = int(upload_net)
-             download_net = int(download_net)
-             print("Wifi Upload speed is" , upload_net)
-             print("Wifi Download speed is" , download_net)
-             speak(f"Your download speed is  {download_net} MB per second")
-             speak(f"Your upload speed is  {upload_net} MB per second")
-        
-        elif "handsfree" in query or "hands free" in query or "hand free" in query:
-             speak("Activating Hands free mode!")
-             Handgesture()
-
-        elif "add my task" in query:
-            from task import add_task
-            add_task()
-        elif "view my task" in query:
-            from task import view_task
-            view_task()
-        elif "update my task" in query:
-            from task import update_task
-            update_task()
-        elif "delete my task" in query:
-            from task import delete_task
-            delete_task()
-
-        elif "my routine" in query:
-                tasks = [] #Empty list 
-                speak("Do you want to clear old tasks (Plz speak YES or NO)")
-                query = takecommand().lower()
-                if "yes" in query:
-                    file = open("tasks.txt","w")
-                    file.write(f"")
-                    file.close()
-                    speak("How many tasks?")
-                    no_tasks = takecommand()
-                    try:
-                        no_tasks = int(no_tasks)
-                    except:
-                        no_tasks = 3
-                    i = 0
-                    for i in range(no_tasks):
-                        speak("Tell me the task")
-                        task = takecommand()
-                        tasks.append(task)
-                        file = open("tasks.txt","a")
-                        file.write(f"{i}. {tasks[i]}\n")
-                        file.close()
-                elif "no" in query:
-                    i = 0
-                    speak("How many tasks?")
-                    no_tasks = takecommand()
-                    try:
-                        no_tasks = int(no_tasks)
-                    except:
-                        no_tasks = 3
-                    for i in range(no_tasks):
-                        speak("Tell me the task")
-                        task = takecommand()
-                        tasks.append(task)
-                        file = open("tasks.txt","a")
-                        file.write(f"{i}. {tasks[i]}\n")
-                        file.close()
-
-        elif "time" in query:
-            strTime = datetime.datetime.now().strftime("%I:%M %p")
-            speak(f"The time is {strTime}")
-            eel.display(f"The time is {strTime}")
-        elif "date" in query:
-            strDate = datetime.datetime.now().strftime("%B %d, %Y")
-            speak(f"The date is {strDate}")
-            eel.display(f"The date is {strDate}")
-
-        elif "remember that" in query:
-            removewords = [ASSISTANT_NAME,'remember', 'that']
-            query = remove_words(query, removewords)
-            rememberMessage = query
-            # rememberMessage = query.replace('I', 'you')
-            rememberMessage = query.replace('i', 'you').replace('my', 'your')
-            print(rememberMessage)
-            speak("ok I remember that " + rememberMessage)
-            remember = open("Remember.txt", "a")
-            remember.write(rememberMessage +" \n")
-            remember.close()
-                                
-        elif "what do you remember" in query:
-            remember = open("Remember.txt","r")
-            speak("You told me to remember that " +remember.read())
-                                                               
-        elif "news" in query:
-            from NewsRead import latestnews
-            latestnews(query)
-
-        elif "calculate" in query:
-            from calculate import Calc
-            query = query.replace("calculate","")
-            query = query.replace("intelli","")
-            Calc(query)
-
-        elif "shutdown the system" in query:
-            speak("Are You sure you want to shutdown, Say Yes or No!")
-            shutdown = takecommand()
-            if shutdown == "yes":
-                speak("ok sir, I am shutting down the system")
-                os.system("shutdown /s /t 1")
-            elif shutdown == "no":
-                speak("ok sir, I am not shutting down the system")
-            pass
-                                        
-        elif "screenshot" in query:
-            speak("ok sir, taking screenshot")
-            im = pyautogui.screenshot()
-            im.save("screenshot by AI.jpg")
-        
-        elif "tired" in query:
-                                speak("I’ve got some great ideas! What would you like! watching a movie, music video, comedy video or informational video ")
-                                relax = takecommand().lower()
-                                if "music" in relax or "songs" in relax:
-                                    speak("Playing your favourite songs,")
-                                    a = (1,2,3,4,5)
-                                    b = random.choice(a)
-                                    if b==1:
-                                        webbrowser.open('https://www.youtube.com/watch?v=w_EbL-rkNgs&list=PLJ0ixiQcQtGKcczK9dSNjIy2kUh5xkyiu')
-                                    elif b==2:
-                                        webbrowser.open('https://www.youtube.com/watch?v=_GWKkqNoyEA&list=PLJ0ixiQcQtGKcczK9dSNjIy2kUh5xkyiu&index=3')
-                                    elif b==3:
-                                        webbrowser.open("https://www.youtube.com/watch?v=Hq5rXS0iIPU&list=PLJ0ixiQcQtGKcczK9dSNjIy2kUh5xkyiu&index=8")
-                                    elif b==4:
-                                        webbrowser.open("https://www.youtube.com/watch?v=vTMAa6zZ7jY&list=PLJ0ixiQcQtGKcczK9dSNjIy2kUh5xkyiu&index=40")
-                                    elif b==5:
-                                        webbrowser.open("https://www.youtube.com/watch?v=K1FlAphL2p8&list=PLJ0ixiQcQtGKcczK9dSNjIy2kUh5xkyiu&index=62")
-
-                                elif "comedy" in relax or "funny" in relax:
-                                     speak("Playing a funny video on YouTube! I hope you'd like")
-                                     search_term = 'stand up comedy'
-                                     kit.playonyt(search_term)
-                                     PlayYoutube(query)
-                                elif "movie" in relax or "movies" in relax:
-                                    speak("Playing a movie trailer on YouTube! I hope you'd like")
-                                    search_term = 'latest movie trailers'
-                                    kit.playonyt(search_term)
-                                    PlayYoutube(query)
-                                elif "information" in relax or "informational" in relax:
-                                     speak("Playing a informational video on youtube! I hope it helps")
-                                     search_term = 'current affairs long video'
-                                     kit.playonyt(search_term)
-                                     PlayYoutube(query)
-                                else:
-                                     speak("Sorry! I didn't recognized. Please try again")
-                                        
-        elif "click my photo" in query:
-            speak("ok sir, clicking your photo")
-            pyautogui.press("super")
-            pyautogui.typewrite("camera")
-            pyautogui.press("enter")
-            pyautogui.sleep(2)
-            speak("SMILE please")
-            pyautogui.press("enter")
-
-        elif "message" in query or "phone call" in query or "video call" in query:
-            from features import findContact, whatsApp
-            flag = ""
-            contact_no, name = findContact(query)
-            if(contact_no != 0):
-
-                if "message" in query:
-                    flag = 'message'
-                    speak("what message to send")
-                    query = takecommand()
-                    
-                elif "phone call" in query:
-                    flag = 'call'
-
-                else:
-                    flag = 'video call'
-                    
-                whatsApp(contact_no, query, flag, name)
-        else:
-            from features import chatBot
-            chatBot(query)
-    except Exception as e:
-        logger.error(f"Error processing command: {e}")
-        traceback.print_exc()
-        speak("Sorry, I encountered an error. Please try again.")
-        eel.DisplayMessage("Error occurred. Please try again.")
+        _social_handlers.handle_chat_fallback(query)
+    except Exception as exc:
+        print(f"error: {exc}")
     
     eel.ShowHood()
+
+
+@eel.expose
+def getSystemCapabilities():
+    return {
+        "os_name": _capabilities.os_name,
+        "can_hotword": _capabilities.can_hotword,
+        "can_screenshot": _capabilities.can_screenshot,
+        "can_shutdown": _capabilities.can_shutdown,
+        "has_camera_launcher": _capabilities.has_camera_launcher,
+        "has_whatsapp_web": _capabilities.has_whatsapp_web,
+    }
+
+@eel.expose
+def toggleScreenRecording():
+    if platform_adapter._is_recording:
+        platform_adapter.stop_screen_recording()
+        return "stopped"
+    else:
+        # Default save path inside current directory
+        import os
+        from datetime import datetime
+        now_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        out_path = os.path.join(os.getcwd(), f"recording_{now_str}.avi")
+        if platform_adapter.start_screen_recording(out_path):
+            return "recording"
+        return "error"
+
+@eel.expose
+def updateVoiceSettings(voice_name, voice_speed):
+    """Receive voice settings from frontend and update the speech module."""
+    from intelli.core import speech
+    speech.VOICE_NAME = voice_name
+    speech.VOICE_SPEED = voice_speed
+    print(f"Voice settings updated: voice={voice_name}, speed={voice_speed}")

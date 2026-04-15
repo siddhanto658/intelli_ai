@@ -203,3 +203,101 @@ body{
   width: auto;
 }
 /* Chat Box Start End*/
+
+/* SiriWave Text Input - same style as main input */
+#TextInputSiri {
+    background-color: #181818a8;
+    border-color: blue;
+    box-shadow: 0 0 20px rgb(25, 0, 255),
+      inset 0 0 0px rgb(25, 0, 255);
+    border-radius: 8px;
+    color: white;
+    padding: 3px 0px 3px 20px;
+    margin: 0px 20%;
+}
+
+/* Settings Panel */
+.settings-canvas {
+    background-color: #111 !important;
+    border-left: 1px solid #222;
+    max-width: 320px;
+}
+
+.settings-header {
+    border-bottom: 1px solid #2a2a2a;
+    padding: 16px 20px;
+}
+
+.settings-body {
+    padding: 10px 16px;
+}
+
+.settings-group {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+}
+
+.settings-group-title {
+    color: #00b4ff;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #252525;
+}
+
+.settings-item {
+    margin-bottom: 12px;
+}
+
+.settings-item:last-child {
+    margin-bottom: 0;
+}
+
+.settings-label {
+    color: #ccc;
+    font-size: 13px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.settings-select {
+    width: 100%;
+    background-color: #222;
+    color: #fff;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    outline: none;
+}
+
+.settings-select:focus {
+    border-color: #00b4ff;
+    box-shadow: 0 0 6px rgba(0, 180, 255, 0.3);
+}
+
+.settings-input {
+    width: 100%;
+    background-color: #222;
+    color: #888;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    outline: none;
+}
+
+.form-check-input:checked {
+    background-color: #00b4ff;
+    border-color: #00b4ff;
+}
+
+.form-check-input {
+    cursor: pointer;
+}

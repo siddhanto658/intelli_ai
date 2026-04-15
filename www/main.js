@@ -38,151 +38,95 @@ $(document).ready(function () {
 
     });
 
-    // Load microphones
-    async function loadMicrophones() {
-        try {
-            var mics = await eel.get_available_mics()();
-            var select = document.getElementById("micSelect");
-            select.innerHTML = "";
-            if (mics && mics.length > 0) {
-                mics.forEach(function(mic) {
-                    var option = document.createElement("option");
-                    option.value = mic.index;
-                    option.text = mic.name;
-                    select.appendChild(option);
-                });
-            } else {
-                var option = document.createElement("option");
-                option.value = "0";
-                option.text = "No microphones found";
-                select.appendChild(option);
-            }
-        } catch (e) {
-            console.error("Error loading microphones:", e);
-        }
+    // ---- Load settings from localStorage ----
+    function loadSettings() {
+        var speed = localStorage.getItem('intelli_voiceSpeed');
+        var voice = localStorage.getItem('intelli_voiceName');
+        var startupSnd = localStorage.getItem('intelli_startupSound');
+        var perms = localStorage.getItem('intelli_permissionPrompts');
+
+        if (speed) $('#voiceSpeed').val(speed);
+        if (voice) $('#voiceName').val(voice);
+        if (startupSnd !== null) $('#startupSound').prop('checked', startupSnd === 'true');
+        if (perms !== null) $('#permissionPrompts').prop('checked', perms === 'true');
     }
+    loadSettings();
 
-    // Load saved settings
-    async function loadSavedSettings() {
-        try {
-            var settings = await eel.get_settings()();
-            if (settings) {
-                document.getElementById("micSelect").value = settings.mic_index || 0;
-                document.getElementById("speechRate").value = settings.speech_rate || 174;
-                document.getElementById("speechRateValue").text = settings.speech_rate || 174;
-            }
-        } catch (e) {
-            console.error("Error loading settings:", e);
-        }
-    }
+    // ---- Save settings ----
+    $("#saveSettingsBtn").click(function () {
+        var speed = $('#voiceSpeed').val();
+        var voice = $('#voiceName').val();
+        var startupSnd = $('#startupSound').is(':checked');
+        var perms = $('#permissionPrompts').is(':checked');
 
-    // Initialize microphones on load
-    setTimeout(loadMicrophones, 1000);
+        localStorage.setItem('intelli_voiceSpeed', speed);
+        localStorage.setItem('intelli_voiceName', voice);
+        localStorage.setItem('intelli_startupSound', String(startupSnd));
+        localStorage.setItem('intelli_permissionPrompts', String(perms));
 
-    // Refresh microphones button
-    $("#refreshMicsBtn").click(function() {
-        loadMicrophones();
+        // Send voice settings to Python backend
+        eel.updateVoiceSettings(voice, speed);
+
+        // Visual save feedback
+        var btn = $(this);
+        btn.text('Saved!').removeClass('btn-outline-info').addClass('btn-success');
+        setTimeout(function() {
+            btn.text('Save Settings').removeClass('btn-success').addClass('btn-outline-info');
+        }, 1500);
     });
 
-    // Test microphone button
-    $("#testMicBtn").click(function() {
-        var micIndex = parseInt(document.getElementById("micSelect").value);
-        
-        // Show testing indicator
-        $("#testMicBtn").html('<span class="spinner-border spinner-border-sm" role="status"></span> Testing...');
-        
-        // Try to listen for 3 seconds
-        eel.test_microphone(micIndex)(function(result) {
-            if (result === "success") {
-                alert("Microphone is working! Say something.");
-            } else {
-                alert("Could not detect microphone. Please try another.");
-            }
-            $("#testMicBtn").html('<i class="bi bi-mic"></i> Test Mic');
-        });
-    });
 
-    // Update speech rate value display
-    $("#speechRate").on("input", function() {
-        $("#speechRateValue").text($(this).val());
-    });
-
-    // Settings button click
-    $("#SettingsBtn").click(function() {
-        var myModal = new bootstrap.Modal(document.getElementById("settingsModal"));
-        myModal.show();
-    });
-
-    // When modal is shown, load microphones
-    $('#settingsModal').on('shown.bs.modal', function () {
-        loadMicrophones();
-        loadSavedSettings();
-    });
-
-    // Save settings
-    $("#saveSettingsBtn").click(async function() {
-        var micIndex = parseInt(document.getElementById("micSelect").value);
-        var speechRate = parseInt(document.getElementById("speechRate").value);
-        
-        try {
-            await eel.set_mic_index(micIndex)();
-            await eel.set_speech_rate(speechRate)();
-        } catch (e) {
-            console.error("Error saving settings:", e);
-        }
-        
-        var myModal = bootstrap.Modal.getInstance(document.getElementById("settingsModal"));
-        myModal.hide();
-        
-        alert("Settings saved! Microphone: " + micIndex + ", Speech Rate: " + speechRate);
-    });
-
-    // Back button to return to text input
-    $("#BackBtn").click(function() {
-        $("#Oval").attr("hidden", false);
-        $("#SiriWave").attr("hidden", true);
-    });
-
-    // Escape key to go back
-    document.addEventListener("keydown", function(e) {
-        if (e.key === "Escape") {
-            $("#Oval").attr("hidden", false);
-            $("#SiriWave").attr("hidden", true);
-        }
-    });
-
-    // mic button click event
+    // ---- Main screen mic button ----
     $("#MicBtn").click(function () { 
-        eel.playAssistantSound()
+        var startupSnd = localStorage.getItem('intelli_startupSound');
+        if (startupSnd === null || startupSnd === 'true') {
+            eel.playAssistantSound()
+        }
         $("#Oval").attr("hidden", true);
         $("#SiriWave").attr("hidden", false);
-        eel.allCommands()()
+        eel.allCommands()
     });
 
-    // keyboard shortcut Ctrl+J
+
     function doc_keyUp(e) {
         if (e.key === 'j' && e.metaKey) {
-            eel.playAssistantSound()
+            var startupSnd = localStorage.getItem('intelli_startupSound');
+            if (startupSnd === null || startupSnd === 'true') {
+                eel.playAssistantSound()
+            }
             $("#Oval").attr("hidden", true);
             $("#SiriWave").attr("hidden", false);
-            eel.allCommands()()
+            eel.allCommands()
         }
     }
     document.addEventListener('keyup', doc_keyUp, false);
 
-    // to play assistant 
+    // Record button click event
+    $("#RecordBtn").click(async function () {
+        let status = await eel.toggleScreenRecording()();
+        if (status === "recording") {
+            $("#RecordBtn i").removeClass("bi-record-circle text-danger").addClass("bi-stop-circle text-warning");
+            eel.playAssistantSound();
+        } else if (status === "stopped") {
+            $("#RecordBtn i").removeClass("bi-stop-circle text-warning").addClass("bi-record-circle text-danger");
+            eel.playAssistantSound();
+        }
+    });
+
+    // ---- Play assistant helper for typed messages ----
     function PlayAssistant(message) {
-        if (message && message.trim() !== "") {
+        if (message != "") {
             $("#Oval").attr("hidden", true);
             $("#SiriWave").attr("hidden", false);
             eel.allCommands(message);
             $("#chatbox").val("")
+            $("#chatbox-siri").val("")
             $("#MicBtn").attr('hidden', false);
             $("#SendBtn").attr('hidden', true);
         }
     }
 
-    // toggle function to hide and display mic and send button 
+    // ---- Main screen text input toggle (mic/send) ----
     function ShowHideButton(message) {
         if (message.length == 0) {
             $("#MicBtn").attr('hidden', false);
@@ -194,26 +138,63 @@ $(document).ready(function () {
         }
     }
 
-    // key up event handler on text box
     $("#chatbox").keyup(function () {
         let message = $("#chatbox").val();
         ShowHideButton(message)
     });
     
-    // send button event handler
     $("#SendBtn").click(function () {
         let message = $("#chatbox").val()
         PlayAssistant(message)
     });
 
-    // enter press event handler on chat box
     $("#chatbox").keypress(function (e) {
         key = e.which;
         if (key == 13) {
-            e.preventDefault();
             let message = $("#chatbox").val()
             PlayAssistant(message)
         }
     });
+
+    // ---- SiriWave screen text input (type during voice mode) ----
+    function ShowHideButtonSiri(message) {
+        if (message.length == 0) {
+            $("#MicBtnSiri").attr('hidden', false);
+            $("#SendBtnSiri").attr('hidden', true);
+        }
+        else {
+            $("#MicBtnSiri").attr('hidden', true);
+            $("#SendBtnSiri").attr('hidden', false);
+        }
+    }
+
+    $("#chatbox-siri").keyup(function () {
+        let message = $("#chatbox-siri").val();
+        ShowHideButtonSiri(message)
+    });
+
+    $("#SendBtnSiri").click(function () {
+        let message = $("#chatbox-siri").val()
+        PlayAssistant(message)
+    });
+
+    $("#chatbox-siri").keypress(function (e) {
+        if (e.which == 13) {
+            let message = $("#chatbox-siri").val()
+            PlayAssistant(message)
+        }
+    });
+
+    // SiriWave mic button - same as main mic
+    $("#MicBtnSiri").click(function () {
+        eel.allCommands()
+    });
+
+    // Back button - return to home/oval screen
+    $("#BackBtn").click(function () {
+        $("#Oval").attr("hidden", false);
+        $("#SiriWave").attr("hidden", true);
+    });
+
 
 });

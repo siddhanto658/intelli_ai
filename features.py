@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import os
 import platform
 import sqlite3
@@ -28,13 +28,22 @@ con = sqlite3.connect("INTELLI.db")
 cursor = con.cursor()
 platform_adapter = PlatformAdapter()
 
+# Hotword control flag
+_hotword_active = True
+
 @eel.expose
 def playAssistantSound():
     music_dir = os.path.join(os.getcwd(), "www", "assets", "audio", "start_sound.mp3")
     try:
-        subprocess.Popen(["mpg123", "-q", music_dir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Try playsound first (cross-platform)
+        playsound(music_dir)
     except Exception as e:
-        print(f"Audio launch skipped: {e}")
+        try:
+            # Fallback to Windows media player
+            import winsound
+            winsound.PlaySound(music_dir, winsound.SND_FILENAME)
+        except Exception as e2:
+            print(f"Audio launch skipped: {e2}")
 
     
 def openCommand(query):
@@ -69,8 +78,9 @@ def openCommand(query):
                     speak("Opening "+query)
                     if not platform_adapter.open_app(query):
                         speak("not found")
-        except:
-            speak("some thing went wrong")
+        except Exception as e:
+            print(f"Error opening command: {e}")
+            speak("something went wrong")
 
 def searchGoogle(query):
     if "google" in query:
@@ -89,7 +99,7 @@ def searchGoogle(query):
             speak("No speakable output available")
             
 def greetuser():
-    current_time = datetime.datetime.now()
+    current_time = datetime.now()
     hour = current_time.hour
     minute = current_time.minute
     print("Current time: ", hour, ":", minute)
@@ -108,44 +118,96 @@ def PlayYoutube(query):
 
 
 def hotword():
-    porcupine=None
-    paud=None
-    audio_stream=None
-    try:
-       
-        # pre trained keywords    
-        porcupine=pvporcupine.create(keywords=['ok google', 'jarvis', 'blueberry', 'pico clock', 'porcupine', 
-                                               'computer', 'americano', 'grasshopper', 'hey google', 'grapefruit', 'bumblebee', 
-                                               'picovoice', 'terminator', 'hey siri', 'alexa']) 
-        paud=pyaudio.PyAudio()
-        audio_stream=paud.open(rate=porcupine.sample_rate,channels=1,format=pyaudio.paInt16,input=True,frames_per_buffer=porcupine.frame_length)
+    import speech_recognition as sr
+    import sys
+    
+    print("INTELLI hotword listening started...")
+    print("Say 'INTELLI' or similar words to activate!")
+    
+    global _hotword_active
+    sys.stdout.flush()
+    
+    while _hotword_active:
+        recognizer = sr.Recognizer()
+        recognizer.energy_threshold = 3000  # Lower threshold for better detection
+        recognizer.dynamic_energy_threshold = True
         
-        # loop for streaming
-        while True:
-            keyword=audio_stream.read(porcupine.frame_length)
-            keyword=struct.unpack_from("h"*porcupine.frame_length,keyword)
-
-            # processing keyword comes from mic 
-            keyword_index=porcupine.process(keyword)
-
-            # checking first keyword detetcted for not
-            if keyword_index>=0:
-                print("hotword detected")
-
-                # pressing shorcut key win+j
-                import pyautogui as autogui
-                modifier_key = "win" if platform.system().lower() == "windows" else "super"
-                autogui.keyDown(modifier_key)
-                autogui.press("j")
-                time.sleep(2)
-                autogui.keyUp(modifier_key)
+        try:
+            print("\n[ HOTWORD ] Listening...", end="")
+            sys.stdout.flush()
+            
+            with sr.Microphone() as source:
+                recognizer.adjust_for_ambient_noise(source, duration=1)
+                audio = recognizer.listen(source, timeout=8, phrase_time_limit=4)
+            
+            print(" Got audio! Recognizing...", end="")
+            sys.stdout.flush()
+            
+            query = recognizer.recognize_google(audio, language='en-in').lower()
+            print(f"\n[ HOTWORD ] Heard: '{query}'")
+            sys.stdout.flush()
+            
+            # Check for matches - more flexible matching
+            wake_words = [
+                'intelli', 'tally', 'bently', 'gentle', 'dental', 'intel',
+                'inteli', 'intalli', 'intilly', 'telly', 'belle', 'twenty',
+                'intel', 'intell', 'tally', 'tally', 'bently', 'gentle'
+            ]
+            
+            query_words = query.split()
+            match_found = False
+            
+            for qw in query_words:
+                for ww in wake_words:
+                    # Fuzzy match - if word is similar enough
+                    if ww in qw or qw in ww:
+                        match_found = True
+                        print(f"[ HOTWORD ] MATCH FOUND! '{qw}' matched '{ww}'")
+                        break
+                    # Check first 4-5 chars
+                    if len(qw) >= 4 and len(ww) >= 4:
+                        if qw[:4] == ww[:4] or qw[:5] == ww[:5]:
+                            match_found = True
+                            print(f"[ HOTWORD ] MATCH FOUND! '{qw}' similar to '{ww}'")
+                            break
+                if match_found:
+                    break
+            
+            if match_found:
+                print("[ HOTWORD ] >>> WAKE WORD DETECTED! <<<")
+                sys.stdout.flush()
+                _trigger_wake_word()
                 
-    except:
-        if porcupine is not None:
-            porcupine.delete()
-        if audio_stream is not None:
-            audio_stream.close()
-        if paud is not None:
-            paud.terminate()
+        except sr.WaitTimeoutError:
+            print(".", end="")
+            sys.stdout.flush()
+        except sr.UnknownValueError:
+            pass
+        except Exception as e:
+            print(f"\n[ HOTWORD ] Error: {e}")
+            sys.stdout.flush()
+            import time
+            time.sleep(2)
+
+
+def _trigger_wake_word():
+    """Called when wake word is detected - triggers welcome message."""
+    import eel
+    import threading
+    from command import speak
+    
+    def _welcome():
+        try:
+            eel.ShowHood()
+            eel.DisplayMessage("Hello! I'm listening...")
+            speak("Hello! I'm INTELLI. How can I help you?")
+            
+            from command import allCommands
+            allCommands(1)
+        except Exception as e:
+            print(f"Welcome message error: {e}")
+    
+    thread = threading.Thread(target=_welcome)
+    thread.start()
 
 

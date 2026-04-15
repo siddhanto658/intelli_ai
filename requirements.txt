@@ -20,3 +20,4 @@ python-pptx
 google-generativeai
 Pillow
 gtts
+edge-tts

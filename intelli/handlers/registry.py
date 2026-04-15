@@ -43,7 +43,9 @@ def build_router(
     )
 
     router.register(["launch"], media_info_handlers.handle_launch)
-    router.register(["on youtube"], media_info_handlers.handle_youtube)
+    router.register(["on youtube", "open youtube", "play youtube"], media_info_handlers.handle_youtube)
+    router.register(["play song", "play music", "play a song", "bajao song", "song bajao"], media_info_handlers.handle_play_song)
+    router.register(["open chrome", "open browser", "open edge", "open firefox", "open notepad", "open calculator", "open vscode", "open code"], media_info_handlers.handle_open_app)
     router.register(
         [
             "hello",

@@ -1,7 +1,38 @@
+# Python
 .venv
 venv
+env
 __pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
 .env
-INTELLI.db
-*.pyc
-*.jpg
+.env.local
+.env.*.local
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# Database
+*.db
+*.sqlite
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Media (generated files)
+*.mp3
+*.wav
+*.avi
+*.mp4
+recordings/

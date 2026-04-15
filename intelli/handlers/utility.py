@@ -1,5 +1,6 @@
 import datetime
 import re
+from datetime import datetime
 from typing import Callable
 
 
@@ -67,12 +68,12 @@ class UtilityHandlers:
 
     def handle_time_date(self, query: str) -> bool:
         if "time" in query:
-            str_time = datetime.datetime.now().strftime("%I:%M %p")
+            str_time = datetime.now().strftime("%I:%M %p")
             self.speak(f"The time is {str_time}")
             self.eel.DisplayMessage(f"The time is {str_time}")
             return True
         if "date" in query:
-            str_date = datetime.datetime.now().strftime("%B %d, %Y")
+            str_date = datetime.now().strftime("%B %d, %Y")
             self.speak(f"The date is {str_date}")
             self.eel.DisplayMessage(f"The date is {str_date}")
             return True

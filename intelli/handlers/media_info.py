@@ -195,3 +195,38 @@ class MediaInfoHandlers:
         self.pyautogui.press("enter")
         return True
 
+    def handle_play_song(self, query: str) -> bool:
+        import pywhatkit as kit
+        song_name = query
+        for word in ["play", "song", "music", "play song", "play music", "bajao", "song bajao", "intelli"]:
+            song_name = song_name.replace(word, "").strip()
+        if not song_name:
+            song_name = "popular songs"
+        self.speak(f"Playing {song_name} on YouTube")
+        kit.playonyt(song_name)
+        return True
+
+    def handle_open_app(self, query: str) -> bool:
+        app_mapping = {
+            "chrome": "chrome",
+            "browser": "chrome",
+            "edge": "msedge",
+            "firefox": "firefox",
+            "notepad": "notepad",
+            "calculator": "calc",
+            "vscode": "code",
+            "code": "code",
+        }
+        for app_key, app_exe in app_mapping.items():
+            if app_key in query.lower():
+                self.speak(f"Opening {app_key}")
+                import subprocess
+                try:
+                    subprocess.Popen(app_exe)
+                except:
+                    self.pyautogui.press(self.platform.launcher_key())
+                    self.pyautogui.typewrite(app_key)
+                    self.pyautogui.press("enter")
+                return True
+        return False
+

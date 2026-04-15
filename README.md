@@ -4,56 +4,87 @@ A Python-based AI voice assistant with features like voice recognition, WhatsApp
 
 ## Features
 
+- **AI Chat**: Conversational AI powered by Groq (Llama) or Gemini
 - **Voice Recognition**: Listen and respond to voice commands
 - **WhatsApp Integration**: Send messages, make calls, and video calls
-- **Weather Updates**: Get current weather and temperature for any location
+- **Weather Updates**: Get current weather and temperature
 - **YouTube Control**: Play videos and search on YouTube
-- **Application Launcher**: Open installed applications
 - **Google Search**: Search the web using voice commands
 - **News Reader**: Read latest news headlines
-- **Hands-free Mode**: Control using hand gestures
-- **Task Management**: Add, view, update, and delete tasks
-- **Chatbot**: Conversational AI powered by HuggingChat
+- **Application Launcher**: Open installed applications
 - **Screenshot**: Capture screen screenshots
 - **Speed Test**: Check internet download and upload speed
 
-## Tech Stack
+## Prerequisites
 
 - Python 3.10+
-- Eel (for web-based UI)
-- Speech Recognition
-- pyttsx3 (Text-to-Speech)
-- SQLite (Database)
-- PyAutoGUI
-- PyWhatKit
+- pip
+- Microphone
 
 ## Installation
 
+1. **Clone the repository**
 ```bash
-pip install eel speech-recognition pyttsx3 pyautogui pywhatkit sqlite3 playsound pvporcupine hugchat
+git clone <repo-url>
+cd INTELLI_AI
 ```
+
+2. **Install dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+3. **Setup API Keys**
+
+Create a `.env` file:
+```env
+GROQ_API_KEY=your_groq_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+NEWS_API_KEY=your_worldnews_api_key_here
+```
+
+Get free API keys:
+- **Groq**: https://console.groq.com/keys (14,400 requests/day FREE!)
+- **Gemini**: https://makersuite.google.com/app/apikey
+- **World News API**: https://worldnewsapi.com/
 
 ## Usage
 
 ```bash
-python main.py
+# Run the app
+python run.py
 ```
+
+Then open your browser to http://localhost:8000
+
+## Tech Stack
+
+- Python 3.10+
+- Eel (Desktop web app framework)
+- Speech Recognition
+- Groq API / Gemini API
+- Edge TTS (Text-to-Speech)
 
 ## Project Structure
 
 ```
-├── main.py          # Main entry point
-├── command.py       # Command processing and voice recognition
-├── features.py      # Feature implementations
-├── config.py        # Configuration
-├── helper.py        # Helper functions
-├── db.py           # Database operations
-├── task.py         # Task management
-├── NewsRead.py     # News reading feature
-├── HandGesture.py  # Hand gesture control
-├── calculate.py    # Calculator feature
-├── www/            # Web UI files
-└── INTELLI.db      # SQLite database
+INTELLI_AI/
+├── run.py              # Main entry point
+├── main.py            # Eel app
+├── command.py         # Voice commands
+├── features.py        # Feature implementations
+├── config.py         # Configuration
+├── db.py             # Database operations
+├── NewsRead.py       # News reading
+├── www/              # Web UI
+│   ├── index.html
+│   ├── main.js
+│   ├── controller.js
+│   └── style.css
+├── intelli/          # AI Brain Module
+│   ├── core/
+│   └── handlers/
+└── .env              # API keys
 ```
 
 ## License

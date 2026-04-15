@@ -44,11 +44,17 @@ $(document).ready(function () {
         var voice = localStorage.getItem('intelli_voiceName');
         var startupSnd = localStorage.getItem('intelli_startupSound');
         var perms = localStorage.getItem('intelli_permissionPrompts');
+        var aiModel = localStorage.getItem('intelli_aiModel');
+        var groqModel = localStorage.getItem('intelli_groqModel');
 
         if (speed) $('#voiceSpeed').val(speed);
         if (voice) $('#voiceName').val(voice);
         if (startupSnd !== null) $('#startupSound').prop('checked', startupSnd === 'true');
         if (perms !== null) $('#permissionPrompts').prop('checked', perms === 'true');
+        if (aiModel) $('#aiModel').val(aiModel);
+        if (groqModel) $('#groqModel').val(groqModel);
+
+        checkApiKeysStatus();
     }
     loadSettings();
 
@@ -58,14 +64,19 @@ $(document).ready(function () {
         var voice = $('#voiceName').val();
         var startupSnd = $('#startupSound').is(':checked');
         var perms = $('#permissionPrompts').is(':checked');
+        var aiModel = $('#aiModel').val();
+        var groqModel = $('#groqModel').val();
 
         localStorage.setItem('intelli_voiceSpeed', speed);
         localStorage.setItem('intelli_voiceName', voice);
         localStorage.setItem('intelli_startupSound', String(startupSnd));
         localStorage.setItem('intelli_permissionPrompts', String(perms));
+        localStorage.setItem('intelli_aiModel', aiModel);
+        localStorage.setItem('intelli_groqModel', groqModel);
 
         // Send voice settings to Python backend
         eel.updateVoiceSettings(voice, speed);
+        eel.updateAiSettings(aiModel, groqModel);
 
         // Visual save feedback
         var btn = $(this);
@@ -196,5 +207,26 @@ $(document).ready(function () {
         $("#SiriWave").attr("hidden", true);
     });
 
+    // ---- Check API Key Status ----
+    async function checkApiKeysStatus() {
+        try {
+            const status = await eel.checkApiKeysStatus()();
+            updateKeyStatus('geminiStatus', status.gemini);
+            updateKeyStatus('groqStatus', status.groq);
+        } catch (e) {
+            console.log("Could not fetch API key status");
+        }
+    }
+
+    function updateKeyStatus(elementId, isSet) {
+        const el = $('#' + elementId);
+        if (el.length) {
+            if (isSet) {
+                el.removeClass('bg-secondary bg-danger').addClass('bg-success').text(el.text().split(':')[0] + ': OK');
+            } else {
+                el.removeClass('bg-secondary bg-success').addClass('bg-danger').text(el.text().split(':')[0] + ': Missing');
+            }
+        }
+    }
 
 });

@@ -112,12 +112,20 @@
     <div class="offcanvas offcanvas-start chat-canvas" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1"
         id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
         <div class="offcanvas-header">
-            <h5 class="offcanvas-title text-white" id="offcanvasScrollingLabel">Chats</h5>
-            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            <h5 class="offcanvas-title text-white" id="offcanvasScrollingLabel">Conversation</h5>
+            <div class="d-flex gap-2">
+                <button id="clearChatBtn" class="btn btn-sm btn-outline-light" title="Clear Chat">
+                    <i class="bi bi-trash"></i>
+                </button>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
         </div>
-        <div id="chat-canvas-body" class="offcanvas-body">
+        <div id="chat-canvas-body" class="offcanvas-body chat-messages">
             <!-- Chatting code here -->
-
+            <div class="welcome-message text-center text-muted mt-5">
+                <i class="bi bi-chat-dots fs-1"></i>
+                <p class="mt-2">Start a conversation with INTELLI</p>
+            </div>
         </div>
     </div>
 
@@ -169,14 +177,26 @@
                 <div class="settings-item">
                     <label class="settings-label" for="aiModel">AI Model</label>
                     <select id="aiModel" class="settings-select">
-                        <option value="cloud" selected>Cloud (Gemini)</option>
+                        <option value="groq" selected>Groq (Llama - Fast!)</option>
+                        <option value="gemini">Gemini (Google)</option>
                         <option value="local">Local (Ollama)</option>
                     </select>
                 </div>
                 <div class="settings-item">
-                    <label class="settings-label">Gemini API Key</label>
-                    <input type="password" class="settings-input" id="geminiKeyDisplay" placeholder="••••••••" disabled>
-                    <small class="text-muted d-block mt-1">Edit in .env file</small>
+                    <label class="settings-label" for="groqModel">Groq Model</label>
+                    <select id="groqModel" class="settings-select">
+                        <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B (Recommended)</option>
+                        <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+                        <option value="gemma2-9b-it">Gemma 2 9B</option>
+                    </select>
+                </div>
+                <div class="settings-item">
+                    <label class="settings-label">API Keys Status</label>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span id="geminiStatus" class="badge bg-secondary">Gemini: Not Set</span>
+                        <span id="groqStatus" class="badge bg-secondary">Groq: Not Set</span>
+                    </div>
+                    <small class="text-muted d-block mt-1">Edit .env file to configure keys</small>
                 </div>
             </div>
 
@@ -198,9 +218,9 @@
             <div class="settings-group">
                 <h6 class="settings-group-title"><i class="bi bi-info-circle me-2"></i>About</h6>
                 <div class="settings-item">
-                    <p class="text-muted mb-1" style="font-size: 13px;">INTELLI AI Companion v2.0</p>
-                    <p class="text-muted mb-1" style="font-size: 13px;">Created by a team of 5 engineering students</p>
-                    <p class="text-muted mb-0" style="font-size: 13px;">Powered by Gemini + Edge-TTS</p>
+                    <p class="text-muted mb-1" style="font-size: 13px;">INTELLI AI Companion v3.0</p>
+                    <p class="text-muted mb-1" style="font-size: 13px;">Docker-ready Voice Assistant</p>
+                    <p class="text-muted mb-0" style="font-size: 13px;">Powered by Groq + Gemini</p>
                 </div>
             </div>
 

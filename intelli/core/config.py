@@ -15,6 +15,7 @@ class Settings:
     news_api_key: str = ""
     hugchat_cookie_path: str = "cookies.json"
     gemini_api_key: str = ""
+    groq_api_key: str = ""
     use_local_llm: bool = False
     local_llm_url: str = "http://localhost:11434/api/generate"
     local_llm_model: str = "llama3"
@@ -28,6 +29,8 @@ def load_environment(env_file: str = ".env") -> None:
     if load_dotenv is None:
         return
     env_path = Path(env_file)
+    if not env_path.is_absolute():
+        env_path = Path(__file__).parent.parent.parent / env_file
     if env_path.exists():
         load_dotenv(dotenv_path=env_path)
 
@@ -41,6 +44,7 @@ def get_settings(refresh: bool = False) -> Settings:
             news_api_key=os.getenv("NEWS_API_KEY", "").strip(),
             hugchat_cookie_path=os.getenv("HUGCHAT_COOKIE_PATH", "cookies.json").strip() or "cookies.json",
             gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
+            groq_api_key=os.getenv("GROQ_API_KEY", "").strip(),
             use_local_llm=os.getenv("USE_LOCAL_LLM", "false").strip().lower() in ("true", "1", "t"),
             local_llm_url=os.getenv("LOCAL_LLM_URL", "http://localhost:11434/api/generate").strip(),
             local_llm_model=os.getenv("LOCAL_LLM_MODEL", "llama3").strip(),

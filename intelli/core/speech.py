@@ -3,10 +3,23 @@ import sys
 import time
 import subprocess
 import re
+import platform
+import threading
+import ctypes
 
-# Configurable from the Settings panel via command.py → updateVoiceSettings()
+# Configurable from the Settings panel via command.py -> updateVoiceSettings()
 VOICE_NAME = "en-US-AriaNeural"
 VOICE_SPEED = "+15%"
+
+# Stop flag for interrupting speech
+_stop_speech = False
+_speech_lock = threading.Lock()
+
+def stop_speech():
+    """Stop any ongoing speech immediately."""
+    global _stop_speech
+    with _speech_lock:
+        _stop_speech = True
 
 def create_tts_engine():
     return None
@@ -15,23 +28,22 @@ def set_voice_preference(gender: str):
     pass
 
 def clean_text_for_speech(text: str) -> str:
-    # 1. Strip markdown characters like * _ ` # ~
     text = re.sub(r'[*_`#~|]+', '', text)
-    # 2. Strip markdown links [text](url) -> text
     text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
-    # 3. Strip bare URLs
     text = re.sub(r'https?://\S+', '', text)
-    # 4. Strip emojis and non-ASCII symbols — keep only printable ASCII
     text = text.encode('ascii', 'ignore').decode('ascii')
-    # 5. Collapse bullet markers like "- " at start of lines
     text = re.sub(r'^\s*[-*]\s+', '', text, flags=re.MULTILINE)
-    # 6. Collapse extra whitespaces
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
 def speak_text(text: str, engine=None) -> None:
+    global _stop_speech
+    
     if not text:
         return
+    
+    with _speech_lock:
+        _stop_speech = False
         
     try:
         clean_text = clean_text_for_speech(text)
@@ -41,11 +53,9 @@ def speak_text(text: str, engine=None) -> None:
         filename = f"speech_{int(time.time()*1000)}.mp3"
         filepath = os.path.join(os.getcwd(), filename)
         
-        # Use ultra-fast edge-tts with AriaNeural voice, boosted rate for natural flow
-        edge_binary = os.path.join(os.path.dirname(sys.executable), "edge-tts")
-        
+        # Use edge-tts command line tool
         edge_cmd = [
-            edge_binary,
+            sys.executable, "-m", "edge_tts",
             "--text", clean_text,
             "--voice", VOICE_NAME,
             "--rate", VOICE_SPEED,
@@ -55,17 +65,45 @@ def speak_text(text: str, engine=None) -> None:
         result = subprocess.run(edge_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
         
         if result.returncode != 0 or not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
-            # Fallback: if edge-tts failed, just skip audio
             if os.path.exists(filepath):
                 os.remove(filepath)
             print(f"edge-tts failed (returncode={result.returncode})")
             return
         
-        # Play using native Linux player
-        subprocess.run(["mpg123", "-q", filepath], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+        # Play audio with stop capability - Windows compatible
+        if platform.system() == "Windows":
+            try:
+                from playsound import playsound
+                
+                def play_with_check():
+                    try:
+                        playsound(filepath)
+                    except Exception as e:
+                        print(f"playsound error: {e}")
+                
+                play_thread = threading.Thread(target=play_with_check)
+                play_thread.start()
+                
+                # Check stop flag while playing
+                while play_thread.is_alive():
+                    with _speech_lock:
+                        if _stop_speech:
+                            # Kill the process forcefully
+                            try:
+                                import winsound
+                                winsound.PlaySound(None, winsound.SND_PURGE)
+                            except:
+                                pass
+                            break
+                    time.sleep(0.1)
+                    
+                play_thread.join(timeout=1)
+                
+            except Exception as e:
+                print(f"playsound error: {e}")
         
         if os.path.exists(filepath):
             os.remove(filepath)
             
     except Exception as e:
-        print(f"Female TTS failed: {e}")
+        print(f"TTS failed: {e}")

@@ -10,7 +10,6 @@ playsound==1.2.2
 hugchat
 requests
 beautifulsoup4
-speedtest-cli
 opencv-python
 mediapipe
 numpy
@@ -19,3 +18,5 @@ mss
 python-docx
 python-pptx
 google-generativeai
+Pillow
+gtts

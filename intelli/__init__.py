@@ -1,0 +1,2 @@
+"""INTELLI core package."""
+

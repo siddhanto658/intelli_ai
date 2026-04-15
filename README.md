@@ -1,92 +1,70 @@
-# INTELLI AI Assistant
+# INTELLI AI - GUI Redesign Branch
 
-A Python-based AI voice assistant with features like voice recognition, WhatsApp integration, weather updates, YouTube control, and more.
+## ⚠️ Status: Feature Branch - Under Development
 
-## Features
+This branch contains the **new GUI redesign** similar to ChatGPT/Gemini/Claude interfaces.
 
-- **AI Chat**: Conversational AI powered by Groq (Llama) or Gemini
-- **Voice Recognition**: Listen and respond to voice commands
-- **WhatsApp Integration**: Send messages, make calls, and video calls
-- **Weather Updates**: Get current weather and temperature
-- **YouTube Control**: Play videos and search on YouTube
-- **Google Search**: Search the web using voice commands
-- **News Reader**: Read latest news headlines
-- **Application Launcher**: Open installed applications
-- **Screenshot**: Capture screen screenshots
-- **Speed Test**: Check internet download and upload speed
+---
 
-## Prerequisites
+## 🎯 Purpose
 
-- Python 3.10+
-- pip
-- Microphone
+This branch is being developed to modernize the INTELLI interface with:
+- Full-screen chat UI
+- Modern message bubbles
+- Typing indicators
+- Quick action chips
+- Chat history sidebar
+- Dark/Light mode
+- Code syntax highlighting
+- Markdown support
 
-## Installation
+---
 
-1. **Clone the repository**
-```bash
-git clone <repo-url>
-cd INTELLI_AI
-```
+## 🔄 What's Different from Main
 
-2. **Install dependencies**
-```bash
-pip install -r requirements.txt
-```
+| Feature | Main Branch | This Branch |
+|---------|-------------|-------------|
+| UI Style | Oval animation | Chat-like interface |
+| Chat History | Not implemented | Planned |
+| Quick Actions | Limited | Planned chips |
+| Code Highlighting | No | Planned |
+| Dark Mode | Basic | Planned full |
 
-3. **Setup API Keys**
+---
 
-Create a `.env` file:
-```env
-GROQ_API_KEY=your_groq_api_key_here
-GEMINI_API_KEY=your_gemini_api_key_here
-NEWS_API_KEY=your_worldnews_api_key_here
-```
+## 🚧 Work In Progress
 
-Get free API keys:
-- **Groq**: https://console.groq.com/keys (14,400 requests/day FREE!)
-- **Gemini**: https://makersuite.google.com/app/apikey
-- **World News API**: https://worldnewsapi.com/
+### Phase 1: ✅ Complete
+- Wake word detection
+- Stop speech functionality  
+- Multilingual support
 
-## Usage
+### Phase 2: 📋 Planned
+- [ ] Full-screen chat interface
+- [ ] Message bubbles with timestamps
+- [ ] Typing indicator animation
+- [ ] Markdown rendering
 
-```bash
-# Run the app
-python run.py
-```
+### Phase 3: 📋 Planned
+- [ ] Left sidebar for chat history
+- [ ] Quick action chips
+- [ ] Search through chats
 
-Then open your browser to http://localhost:8000
+---
 
-## Tech Stack
+## 📥 Merge to Main
 
-- Python 3.10+
-- Eel (Desktop web app framework)
-- Speech Recognition
-- Groq API / Gemini API
-- Edge TTS (Text-to-Speech)
+Once GUI redesign is complete, this branch will be merged into `main` via Pull Request.
 
-## Project Structure
+---
 
-```
-INTELLI_AI/
-├── run.py              # Main entry point
-├── main.py            # Eel app
-├── command.py         # Voice commands
-├── features.py        # Feature implementations
-├── config.py         # Configuration
-├── db.py             # Database operations
-├── NewsRead.py       # News reading
-├── www/              # Web UI
-│   ├── index.html
-│   ├── main.js
-│   ├── controller.js
-│   └── style.css
-├── intelli/          # AI Brain Module
-│   ├── core/
-│   └── handlers/
-└── .env              # API keys
-```
+## 👥 Contributors
 
-## License
+- **Siddhanto Goswami** - siddhantogoswami7@gmail.com
+- **Subid-int** - subidbarick9810@gmail.com
+
+---
+
+## 📄 License
 
 MIT License

@@ -5,7 +5,12 @@ import time
 import queue
 import threading
 import requests
+import warnings
 from typing import List, Dict, Any, Callable, Optional, Generator
+
+# Suppress google deprecation warning
+warnings.filterwarnings("ignore", category=FutureWarning, module="google.generativeai")
+
 from intelli.core.config import get_settings
 
 # Try new google.genai SDK first, fallback to deprecated

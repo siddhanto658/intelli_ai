@@ -5,6 +5,13 @@ from intelli.handlers.social import SocialHandlers
 from intelli.handlers.communications import CommunicationsHandlers
 from intelli.handlers.utility import UtilityHandlers
 from intelli.handlers.generation import GenerationHandlers
+from intelli.handlers.dictionary import DictionaryAPI
+from intelli.handlers.openweather import OpenMeteoWeather
+
+
+# Quick handlers for new APIs
+_dictionary_handler = DictionaryAPI._static_method
+_weather_handler = OpenMeteoWeather
 
 
 def build_router(
@@ -64,7 +71,7 @@ def build_router(
     )
     router.register(["google"], media_info_handlers.handle_google)
     router.register(
-        ["temperature", "weather"],
+        ["temperature", "weather", "rain", "sunny", "cloudy", "forecast", "astronomy", "stargazing", "will it"],
         media_info_handlers.handle_weather_temperature,
     )
     router.register(
@@ -83,5 +90,81 @@ def build_router(
     router.register(["generate presentation", "create ppt", "make slides"], generation_handlers.handle_pptx_generation)
     router.register(["generate video", "create video"], generation_handlers.handle_video_generation)
 
+    # New: Dictionary lookup
+    router.register(
+        ["define", "meaning of", "what does", "dictionary"],
+        _handle_dictionary,
+    )
+
+    # New: Wikipedia lookup
+    router.register(
+        ["who is", "what is", "tell me about", "wikipedia"],
+        _handle_wikipedia,
+    )
+
     return router
+
+
+def _handle_dictionary(query: str) -> bool:
+    """Handle dictionary lookups."""
+    import re
+    from command import speak
+    
+    # Extract word to define
+    patterns = [
+        r"define\s+(\w+)",
+        r"meaning of\s+(\w+)",
+        r"what does\s+(\w+)\s+mean",
+        r"dictionary\s+(\w+)",
+    ]
+    
+    word = None
+    for pattern in patterns:
+        match = re.search(pattern, query.lower())
+        if match:
+            word = match.group(1)
+            break
+    
+    if not word:
+        # Try to get last word
+        words = query.lower().split()
+        word = words[-1] if words else None
+    
+    if word:
+        definition = DictionaryAPI.define(word)
+        if definition:
+            speak(definition)
+            return True
+    
+    return False
+
+
+def _handle_wikipedia(query: str) -> bool:
+    """Handle Wikipedia lookups."""
+    from command import speak
+    
+    # Remove common prefixes
+    query = query.lower()
+    query = query.replace("who is", "").replace("what is", "")
+    query = query.replace("tell me about", "").replace("wikipedia", "")
+    query = query.replace("intelli", "").strip()
+    
+    if not query:
+        return False
+    
+    try:
+        import requests
+        url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{query.replace(' ', '_')}"
+        response = requests.get(url, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            extract = data.get("extract", "")
+            if extract:
+                speak(extract)
+                return True
+    except:
+        pass
+    
+    return False
 

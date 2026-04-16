@@ -89,32 +89,13 @@ class MediaInfoHandlers:
 
     def handle_weather_temperature(self, query: str) -> bool:
         try:
-            city = ""
-            if "cuttack" in query.lower():
-                city = "cuttack"
-                
-            response = requests.get(f"https://wttr.in/{city}?format=%t|%C", timeout=12)
-            if response.status_code == 200:
-                parts = response.text.strip().split('|')
-                if len(parts) == 2:
-                    temp_raw, condition = parts
-                    # Extract just the digits for spoken text
-                    temp_match = re.search(r'[-+]?(\d+)', temp_raw)
-                    temp = temp_match.group(1) if temp_match else "unknown"
-                    
-                    speak_text = f"{temp} degree celsius, today is a {condition.lower()} environment."
-                    display_text = f"{temp_raw.replace('+', '')}, {condition}"
-                    
-                    self.eel.DisplayMessage(display_text)
-                    self.speak(speak_text)
-                else:
-                    self.speak(f"The current weather is {response.text.strip()}")
-            else:
-                self.speak("I am currently unable to fetch the specific weather from the internet.")
-        except requests.exceptions.Timeout:
-            self.speak("The weather service took too long to respond.")
+            from intelli.handlers.weather import get_weather
+            response = get_weather(query)
+            self.eel.DisplayMessage(response)
+            self.speak(response)
         except Exception as e:
-            self.speak("Sorry, I could not reach the weather service at this time.")
+            print(f"Weather error: {e}")
+            self.speak("Sorry, I could not fetch the weather right now.")
         return True
 
     def handle_speedtest(self, query: str) -> bool:

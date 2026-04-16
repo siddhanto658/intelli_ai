@@ -1,7 +1,6 @@
 window.addEventListener("load", windowLoadHandler, false);
 var sphereRad = 140;
 var radius_sp = 1;
-//for debug messages
 var Debugger = function () { };
 Debugger.log = function (message) {
 	try {
@@ -51,7 +50,6 @@ function canvasApp() {
 	var randAccelX, randAccelY, randAccelZ;
 	var gravity;
 	var rgbString;
-	//we are defining a lot of variables used in the screen update functions globally so that they don't have to be redefined every frame.
 	var p;
 	var outsideTest;
 	var nextParticle;
@@ -65,41 +63,36 @@ function canvasApp() {
 
 	init();
 
-	// eel.expose(init)
 	function init() {
 		wait = 1;
 		count = wait - 1;
 		numToAddEachFrame = 8;
 
-		//particle color
 		r = 0;
 		g = 72;
 		b = 255;
 
-		rgbString = "rgba(" + r + "," + g + "," + b + ","; //partial string for color which will be completed by appending alpha value.
-		particleAlpha = 1; //maximum alpha
+		rgbString = "rgba(" + r + "," + g + "," + b + ",";
+		particleAlpha = 1;
 
 		displayWidth = theCanvas.width;
 		displayHeight = theCanvas.height;
 
-		fLen = 320; //represents the distance from the viewer to z=0 depth.
+		fLen = 320;
 
-		//projection center coordinates sets location of origin
 		projCenterX = displayWidth / 2;
 		projCenterY = displayHeight / 2;
 
-		//we will not draw coordinates if they have too large of a z-coordinate (which means they are very close to the observer).
 		zMax = fLen - 2;
 
 		particleList = {};
 		recycleBin = {};
 
-		//random acceleration factors - causes some random motion
 		randAccelX = 0.1;
 		randAccelY = 0.1;
 		randAccelZ = 0.1;
 
-		gravity = -0; //try changing to a positive number (not too large, for example 0.3), or negative for floating upwards.
+		gravity = -0;
 
 		particleRad = 1.8;
 
@@ -107,17 +100,15 @@ function canvasApp() {
 		sphereCenterY = 0;
 		sphereCenterZ = -3 - sphereRad;
 
-		//alpha values will lessen as particles move further back, causing depth-based darkening:
 		zeroAlphaDepth = -750;
 
-		turnSpeed = 2 * Math.PI / 1200; //the sphere will rotate at this speed (one complete rotation every 1600 frames).
-		turnAngle = 0; //initial angle
+		turnSpeed = 2 * Math.PI / 1200;
+		turnAngle = 0;
 
 		timer = setInterval(onTimer, 10 / 24);
 	}
 
 	function onTimer() {
-		//if enough time has elapsed, we will add new particles.		
 		count++;
 		if (count >= wait) {
 
@@ -129,12 +120,8 @@ function canvasApp() {
 				y0 = sphereRad * Math.sin(phi) * Math.sin(theta);
 				z0 = sphereRad * Math.cos(phi);
 
-				//We use the addParticle function to add a new particle. The parameters set the position and velocity components.
-				//Note that the velocity parameters will cause the particle to initially fly outwards away from the sphere center (after
-				//it becomes unstuck).
 				var p = addParticle(x0, sphereCenterY + y0, sphereCenterZ + z0, 0.002 * x0, 0.002 * y0, 0.002 * z0);
 
-				//we set some "envelope" parameters which will control the evolving alpha of the particles.
 				p.attack = 50;
 				p.hold = 50;
 				p.decay = 100;
@@ -142,7 +129,6 @@ function canvasApp() {
 				p.holdValue = particleAlpha;
 				p.lastValue = 0;
 
-				//the particle will be stuck in one place until this time has elapsed:
 				p.stuckTime = 90 + Math.random() * 20;
 
 				p.accelX = 0;
@@ -151,25 +137,19 @@ function canvasApp() {
 			}
 		}
 
-		//update viewing angle
 		turnAngle = (turnAngle + turnSpeed) % (2 * Math.PI);
 		sinAngle = Math.sin(turnAngle);
 		cosAngle = Math.cos(turnAngle);
 
-		//background fill
 		context.fillStyle = "#000000";
 		context.fillRect(0, 0, displayWidth, displayHeight);
 
-		//update and draw particles
 		p = particleList.first;
 		while (p != null) {
-			//before list is altered record next particle
 			nextParticle = p.next;
 
-			//update age
 			p.age++;
 
-			//if the particle is past its "stuck" time, it will begin to move.
 			if (p.age > p.stuckTime) {
 				p.velX += p.accelX + randAccelX * (Math.random() * 2 - 1);
 				p.velY += p.accelY + randAccelY * (Math.random() * 2 - 1);
@@ -180,19 +160,12 @@ function canvasApp() {
 				p.z += p.velZ;
 			}
 
-			/*
-			We are doing two things here to calculate display coordinates.
-			The whole display is being rotated around a vertical axis, so we first calculate rotated coordinates for
-			x and z (but the y coordinate will not change).
-			Then, we take the new coordinates (rotX, y, rotZ), and project these onto the 2D view plane.
-			*/
 			rotX = cosAngle * p.x + sinAngle * (p.z - sphereCenterZ);
 			rotZ = -sinAngle * p.x + cosAngle * (p.z - sphereCenterZ) + sphereCenterZ;
 			m = radius_sp * fLen / (fLen - rotZ);
 			p.projX = rotX * m + projCenterX;
 			p.projY = p.y * m + projCenterY;
 
-			//update alpha according to envelope parameters.
 			if (p.age < p.attack + p.hold + p.decay) {
 				if (p.age < p.attack) {
 					p.alpha = (p.holdValue - p.initValue) / p.attack * p.age + p.initValue;
@@ -208,7 +181,6 @@ function canvasApp() {
 				p.dead = true;
 			}
 
-			//see if the particle is still within the viewable range.
 			if ((p.projX > displayWidth) || (p.projX < 0) || (p.projY < 0) || (p.projY > displayHeight) || (rotZ > zMax)) {
 				outsideTest = true;
 			}
@@ -221,12 +193,10 @@ function canvasApp() {
 			}
 
 			else {
-				//depth-dependent darkening
 				depthAlphaFactor = (1 - rotZ / zeroAlphaDepth);
 				depthAlphaFactor = (depthAlphaFactor > 1) ? 1 : ((depthAlphaFactor < 0) ? 0 : depthAlphaFactor);
 				context.fillStyle = rgbString + depthAlphaFactor * p.alpha + ")";
 
-				//draw
 				context.beginPath();
 				context.arc(p.projX, p.projY, m * particleRad, 0, 2 * Math.PI, false);
 				context.closePath();
@@ -239,12 +209,9 @@ function canvasApp() {
 
 	function addParticle(x0, y0, z0, vx0, vy0, vz0) {
 		var newParticle;
-		var color;
 
-		//check recycle bin for available drop:
 		if (recycleBin.first != null) {
 			newParticle = recycleBin.first;
-			//remove from bin
 			if (newParticle.next != null) {
 				recycleBin.first = newParticle.next;
 				newParticle.next.prev = null;
@@ -253,12 +220,10 @@ function canvasApp() {
 				recycleBin.first = null;
 			}
 		}
-		//if the recycle bin is empty, create a new particle (a new ampty object):
 		else {
 			newParticle = {};
 		}
 
-		//add to beginning of particle list
 		if (particleList.first == null) {
 			particleList.first = newParticle;
 			newParticle.prev = null;
@@ -271,7 +236,6 @@ function canvasApp() {
 			newParticle.prev = null;
 		}
 
-		//initialize
 		newParticle.x = x0;
 		newParticle.y = y0;
 		newParticle.z = z0;
@@ -290,7 +254,6 @@ function canvasApp() {
 	}
 
 	function recycle(p) {
-		//remove from particleList
 		if (particleList.first == p) {
 			if (p.next != null) {
 				p.next.prev = null;
@@ -309,7 +272,6 @@ function canvasApp() {
 				p.next.prev = p.prev;
 			}
 		}
-		//add to recycle bin
 		if (recycleBin.first == null) {
 			recycleBin.first = p;
 			p.prev = null;

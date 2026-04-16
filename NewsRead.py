@@ -1,17 +1,37 @@
 import eel
 import requests
 import json
-from command import takecommand, speak
+from command import speak
 from intelli.core.config import get_settings
+from intelli.core.thread_safe import stop_listening, is_speaking
+from intelli.core.logger import log_info, log_warning, log_error
 
-@eel.expose
+MAX_NEWS_ITEMS = 5
+
+def should_continue():
+    """Check if we should continue or stop."""
+    return not stop_listening.is_set
+
 def latestnews():
     api_key = get_settings().news_api_key
     if not api_key:
-        speak("News API key is missing. Please set NEWS_API_KEY in .env file.")
-        eel.DisplayMessage("Missing NEWS_API_KEY")
-        eel.ShowHood()
+        try:
+            eel.DisplayMessage("Missing NEWS_API_KEY")
+            eel.ShowHood()
+        except:
+            pass
         return
+
+    try:
+        speak("Which field news do you want? You can say: business, health, technology, sports, entertainment, science, or politics.")
+        
+        if not should_continue():
+            return
+            
+        query = ""
+
+    except:
+        pass
 
     categories = {
         "business": "business",
@@ -23,9 +43,6 @@ def latestnews():
         "politics": "politics",
     }
 
-    speak("Which field news do you want? You can say: business, health, technology, sports, entertainment, science, or politics.")
-    query = takecommand().lower()
-
     category = None
     for key in categories:
         if key in query:
@@ -33,14 +50,17 @@ def latestnews():
             break
 
     if not category:
-        category = "top"  # Default to top news
+        category = "top"
+
+    if not should_continue():
+        return
 
     try:
         params = {
             "api-key": api_key,
             "language": "en",
             "source-country": "in",
-            "page-size": 5,
+            "page-size": MAX_NEWS_ITEMS,
         }
 
         if category != "top":
@@ -52,11 +72,8 @@ def latestnews():
 
         if response.status_code != 200:
             speak(f"Sorry, I couldn't fetch the news. Error: {data.get('message', 'Unknown error')}")
-            eel.DisplayMessage(f"News API Error: {data.get('message', 'Unknown')}")
-            eel.ShowHood()
             return
 
-        # World News API returns: {"top_news": [{"news": [...]}]}
         top_news = data.get("top_news", [])
         articles = []
         if top_news and len(top_news) > 0:
@@ -64,42 +81,60 @@ def latestnews():
 
         if not articles:
             speak("No news found for this category.")
-            eel.DisplayMessage("No news found")
-            eel.ShowHood()
             return
 
         speak("Here are the latest news headlines.")
 
-        for i, article in enumerate(articles[:5]):
+        news_count = 0
+        for i, article in enumerate(articles[:MAX_NEWS_ITEMS]):
+            if not should_continue():
+                log_info("News reading interrupted by user")
+                break
+
             title = article.get("title", "No title")
             source = article.get("source_country", "").upper()
             sentiment = article.get("sentiment", 0)
 
-            sentiment_emoji = ""
+            sentiment_text = ""
             if sentiment > 0.2:
-                sentiment_emoji = " (Positive)"
+                sentiment_text = " (Positive)"
             elif sentiment < -0.2:
-                sentiment_emoji = " (Negative)"
+                sentiment_text = " (Negative)"
 
-            display_text = f"{title}{sentiment_emoji}"
+            display_text = f"{title}{sentiment_text}"
             print(f"{i+1}. {title}")
             print(f"   Source: {source} | Sentiment: {sentiment}")
-            eel.DisplayMessage(display_text)
-            speak(f"{title}{sentiment_emoji}")
+            
+            try:
+                eel.DisplayMessage(display_text)
+            except:
+                pass
+            
+            speak(f"{title}{sentiment_text}")
 
-            if i < len(articles) - 1 and i < 4:
+            if not should_continue():
+                break
+
+            news_count += 1
+
+            if i < len(articles) - 1 and i < MAX_NEWS_ITEMS - 1:
                 speak("Here is the next one.")
+                
+                if not should_continue():
+                    break
 
-        speak("That's all the news I have for you.")
-        eel.DisplayMessage("That's all!")
-        eel.ShowHood()
+        if news_count > 0 and should_continue():
+            speak(f"That's {news_count} news items for you.")
+
+        try:
+            eel.DisplayMessage(f"Read {news_count} news items")
+            eel.ShowHood()
+        except:
+            pass
 
     except requests.exceptions.Timeout:
         speak("The news service is taking too long to respond. Please try again.")
-        eel.DisplayMessage("Connection timeout")
-        eel.ShowHood()
 
     except Exception as e:
-        speak(f"Sorry, I encountered an error while fetching news: {str(e)}")
-        eel.DisplayMessage(f"Error: {str(e)}")
-        eel.ShowHood()
+        log_error(f"News fetch error: {e}")
+        speak("Sorry, I encountered an error while fetching news.")

@@ -5,21 +5,22 @@ import subprocess
 import re
 import platform
 import threading
-import ctypes
+from intelli.core.thread_safe import stop_listening, ThreadSafeFlag
 
 # Configurable from the Settings panel via command.py -> updateVoiceSettings()
 VOICE_NAME = "en-US-AriaNeural"
 VOICE_SPEED = "+15%"
 
-# Stop flag for interrupting speech
-_stop_speech = False
-_speech_lock = threading.Lock()
+# Speech-specific stop flag
+_speech_stopped = ThreadSafeFlag(False)
+_speaking = False
 
 def stop_speech():
     """Stop any ongoing speech immediately."""
-    global _stop_speech
-    with _speech_lock:
-        _stop_speech = True
+    global _speaking
+    _speech_stopped.set()
+    _speaking = False
+    stop_listening.set()
 
 def create_tts_engine():
     return None
@@ -37,14 +38,19 @@ def clean_text_for_speech(text: str) -> str:
     return text
 
 def speak_text(text: str, engine=None) -> None:
-    global _stop_speech
+    global _speaking
     
     if not text:
         return
     
-    with _speech_lock:
-        _stop_speech = False
-        
+    if _speech_stopped.is_set:
+        _speech_stopped.clear()
+        return
+    
+    _speaking = True
+    _speech_stopped.clear()
+    stop_listening.set()
+    
     try:
         clean_text = clean_text_for_speech(text)
         if not clean_text:
@@ -53,7 +59,7 @@ def speak_text(text: str, engine=None) -> None:
         filename = f"speech_{int(time.time()*1000)}.mp3"
         filepath = os.path.join(os.getcwd(), filename)
         
-        # Use edge-tts command line tool
+        # Generate speech using edge-tts
         edge_cmd = [
             sys.executable, "-m", "edge_tts",
             "--text", clean_text,
@@ -62,48 +68,91 @@ def speak_text(text: str, engine=None) -> None:
             "--write-media", filepath
         ]
         
-        result = subprocess.run(edge_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
+        creation_flags = subprocess.CREATE_NO_WINDOW if platform.system() == "Windows" else 0
+        
+        result = subprocess.run(
+            edge_cmd, 
+            stdout=subprocess.DEVNULL, 
+            stderr=subprocess.DEVNULL, 
+            timeout=30,
+            creationflags=creation_flags
+        )
         
         if result.returncode != 0 or not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
-            if os.path.exists(filepath):
-                os.remove(filepath)
             print(f"edge-tts failed (returncode={result.returncode})")
+            if os.path.exists(filepath):
+                try:
+                    os.remove(filepath)
+                except:
+                    pass
+            _speak_fallback(clean_text)
             return
         
-        # Play audio with stop capability - Windows compatible
-        if platform.system() == "Windows":
-            try:
-                from playsound import playsound
-                
-                def play_with_check():
-                    try:
-                        playsound(filepath)
-                    except Exception as e:
-                        print(f"playsound error: {e}")
-                
-                play_thread = threading.Thread(target=play_with_check)
-                play_thread.start()
-                
-                # Check stop flag while playing
-                while play_thread.is_alive():
-                    with _speech_lock:
-                        if _stop_speech:
-                            # Kill the process forcefully
-                            try:
-                                import winsound
-                                winsound.PlaySound(None, winsound.SND_PURGE)
-                            except:
-                                pass
-                            break
-                    time.sleep(0.1)
-                    
-                play_thread.join(timeout=1)
-                
-            except Exception as e:
-                print(f"playsound error: {e}")
+        # Play audio and wait for it to finish
+        _play_audio(filepath)
         
-        if os.path.exists(filepath):
-            os.remove(filepath)
+    except subprocess.TimeoutExpired:
+        print("TTS timeout")
+    except Exception as e:
+        print(f"TTS error: {e}")
+        try:
+            _speak_fallback(clean_text)
+        except:
+            pass
+    finally:
+        _speaking = False
+        stop_listening.clear()
+
+
+def _play_audio(filepath: str):
+    """Play audio file and wait for completion."""
+    if _speech_stopped.is_set:
+        return
+    
+    try:
+        if platform.system() == "Windows":
+            # Use PowerShell to play audio - blocks until finished
+            # This is more reliable than playsound
+            ps_script = f'''
+            $file = "{filepath.replace("\\", "\\\\")}"
+            $player = New-Object System.Media.SoundPlayer $file
+            $player.PlaySync()
+            $player.Dispose()
+            '''
+            proc = subprocess.Popen(
+                ['powershell', '-Command', ps_script],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=subprocess.CREATE_NO_WINDOW
+            )
+            
+            # Wait for playback to finish or stop signal
+            while proc.poll() is None:
+                if _speech_stopped.is_set:
+                    proc.terminate()
+                    break
+                time.sleep(0.1)
+                
+        else:
+            # Linux/Mac - use aplay or similar
+            subprocess.run(['aplay', filepath], check=False, timeout=60)
             
     except Exception as e:
-        print(f"TTS failed: {e}")
+        print(f"Play error: {e}")
+        # Simple fallback
+        try:
+            os.startfile(filepath)
+        except:
+            pass
+
+
+def _speak_fallback(text: str):
+    """Fallback TTS using pyttsx3."""
+    try:
+        import pyttsx3
+        engine = pyttsx3.init()
+        engine.setProperty('rate', 180)
+        engine.say(text)
+        engine.runAndWait()
+    except Exception as e:
+        print(f"Fallback TTS failed: {e}")

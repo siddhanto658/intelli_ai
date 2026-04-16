@@ -1,0 +1,114 @@
+# INTELLI AI - Provider Configuration
+# Configure which providers to use for STT, TTS, and LLM
+
+# ============================================
+# STT (Speech-to-Text) Configuration
+# ============================================
+stt:
+  # Active provider: google, vosk
+  active: google
+  
+  # Google Speech Recognition (default, online)
+  google:
+    enabled: true
+    language: "en-in"
+    energy_threshold: 3000
+  
+  # Vosk (offline, requires model download)
+  vosk:
+    enabled: true
+    model_path: "models/vosk-model-en-us-0.22"
+    language: "en"
+
+# ============================================
+# TTS (Text-to-Speech) Configuration
+# ============================================
+tts:
+  # Active provider: edge, pyttsx3
+  active: edge
+  
+  # Edge TTS (default, online, high quality)
+  edge:
+    enabled: true
+    voice: "en-US-AriaNeural"  # Options: en-US-AriaNeural, en-US-JennyNeural, en-GB-SoniaNeural, en-IN-NeerjaNeural
+    rate: "+15%"               # Options: +0%, +10%, +15%, +25%
+  
+  # pyttsx3 (offline, lower quality)
+  pyttsx3:
+    enabled: true
+    rate: 180
+    voice_id: 0
+
+# ============================================
+# LLM (AI Brain) Configuration
+# ============================================
+llm:
+  # Primary provider: groq, gemini, ollama
+  active: groq
+  fallback: gemini
+  
+  # Groq (fast, free tier available)
+  groq:
+    enabled: true
+    model: "llama-3.3-70b-versatile"  # Options: llama-3.3-70b-versatile, mixtral-8x7b-32768, gemma2-9b-it
+  
+  # Gemini (Google, backup)
+  gemini:
+    enabled: true
+    model: "gemini-2.0-flash"  # Options: gemini-2.0-flash, gemini-1.5-pro, gemini-1.5-flash
+  
+  # Ollama (offline, local)
+  ollama:
+    enabled: true
+    model: "llama3.2"  # Options: llama3.2, mistral, codellama, etc.
+    host: "http://localhost:11434"
+
+# ============================================
+# Memory Configuration
+# ============================================
+memory:
+  # Enable RAG memory for better context
+  rag_enabled: true
+  max_context_messages: 10
+  
+  # Enable prompt injection protection
+  prompt_protection_enabled: true
+  
+  # Auto-save conversation history
+  save_history: true
+  history_limit: 100
+
+# ============================================
+# Offline Mode Configuration
+# ============================================
+offline:
+  # Enable offline mode toggle
+  enabled: true
+  
+  # Preferred offline providers
+  stt: vosk
+  tts: pyttsx3
+  llm: ollama
+  
+  # Auto-detect and switch when offline
+  auto_switch: false
+
+# ============================================
+# API Keys (can also use environment variables)
+# ============================================
+api_keys:
+  # GROQ_API_KEY env variable
+  # GEMINI_API_KEY env variable
+  # Get from https://console.groq.com and https://aistudio.google.com/app/apikey
+
+# ============================================
+# Feature Toggles
+# ============================================
+features:
+  streaming: true          # Stream AI responses
+  multi_turn: true        # Continue conversation after response
+  multilingual: true      # Support Hindi, Tamil, etc.
+  weather_7timer: true    # Use 7Timer for weather
+  weather_openmeteo: true # Use Open-Meteo as backup
+  dictionary_api: true     # Use Free Dictionary API
+  wikipedia_api: true     # Use Wikipedia for facts

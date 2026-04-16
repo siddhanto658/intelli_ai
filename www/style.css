@@ -228,12 +228,13 @@ body {
 
 .square{
     position: relative;
-    width: 400px;
-    height: 400px;
+    width: 300px;
+    height: 300px;
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 2;
+    filter: blur(0.5px);
 }
 
 .square span:nth-child(1){
@@ -242,11 +243,11 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: radial-gradient(#6b72ff00 50%, #000dff3b 40%);
-    box-shadow: 0 0 50px rgb(25, 0, 255), inset 0 0 50px rgb(25, 0, 255);
-    border-radius: 38% 62% 63% 37% / 41% 44% 56% 59%;
-    transition: 0.5s;
-    animation: animate1 6s linear infinite;
+    background-image: radial-gradient(circle at 30% 30%, rgba(139, 92, 246, 0.3) 0%, transparent 60%);
+    box-shadow: 0 0 60px rgba(139, 92, 246, 0.4), inset 0 0 40px rgba(6, 182, 212, 0.2);
+    border-radius: 50%;
+    animation: spin1 8s linear infinite;
+    opacity: 0.8;
 }
 
 .square span:nth-child(2){
@@ -255,11 +256,11 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: radial-gradient(#6b72ff00 50%, #000dff3b 40%);
-    box-shadow: 0 0 50px rgb(25, 0, 255), inset 0 0 50px rgb(25, 0, 255);
-    border-radius: 38% 62% 63% 37% / 41% 44% 56% 59%;
-    transition: 0.5s;
-    animation: animate2 4s linear infinite;
+    background-image: radial-gradient(circle at 70% 70%, rgba(6, 182, 212, 0.3) 0%, transparent 60%);
+    box-shadow: 0 0 60px rgba(6, 182, 212, 0.4), inset 0 0 40px rgba(139, 92, 246, 0.2);
+    border-radius: 50%;
+    animation: spin2 6s linear infinite reverse;
+    opacity: 0.7;
 }
 
 .square span:nth-child(3){
@@ -268,36 +269,24 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: radial-gradient(#6b72ff00 50%, #000dff3b 40%);
-    box-shadow: 0 0 50px rgb(25, 0, 255), inset 0 0 50px rgb(25, 0, 255);
-    border-radius: 38% 62% 63% 37% / 41% 44% 56% 59%;
-    transition: 0.5s;
-    animation: animate3 8s linear infinite;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
+    border-radius: 50%;
+    animation: spin3 10s linear infinite;
+    opacity: 0.6;
 }
 
-@keyframes animate1 {
-    0%{
-        transform: rotate(0deg);
-    }
-    100%{
-        transform: rotate(360deg);
-    }
+@keyframes spin1 {
+    from { transform: rotate(0deg) scale(1); }
+    to { transform: rotate(360deg) scale(1.05); }
 }
-@keyframes animate2 {
-    0%{
-        transform: rotate(0deg);
-    }
-    100%{
-        transform: rotate(360deg);
-    }
+@keyframes spin2 {
+    from { transform: rotate(0deg) scale(1.05); }
+    to { transform: rotate(-360deg) scale(1); }
 }
-@keyframes animate3 {
-    0%{
-        transform: rotate(0deg);
-    }
-    100%{
-        transform: rotate(360deg);
-    }
+@keyframes spin3 {
+    from { transform: rotate(0deg) scale(0.95); }
+    to { transform: rotate(360deg) scale(1); }
 }
 
 .orb-glow {

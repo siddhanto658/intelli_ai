@@ -4,11 +4,17 @@ import threading
 import platform
 import subprocess
 import os
+import sys
+import signal
 from pathlib import Path
 
 # Get the directory where run.py is located
 BASE_DIR = Path(__file__).parent.absolute()
 ENV_FILE = BASE_DIR / ".env"
+
+# Global process references for cleanup
+_main_process = None
+_hotword_flag = None
 
 # Load environment BEFORE spawning processes
 def _load_env():
@@ -45,28 +51,71 @@ def startINTELLI():
 # To run hotword - as a thread within main process
 def startHotwordThread():
     print("Hotword thread starting in main process...")
-    import sys
     sys.stdout.flush()
-    from features import hotword 
+    from features import hotword
+    from intelli.core.thread_safe import hotword_active
+    global _hotword_flag
+    _hotword_flag = hotword_active
     hotword()
 
+def stopINTELLI():
+    """Stop INTELLI gracefully."""
+    global _main_process, _hotword_flag
+    print("\n[SHUTDOWN] Stopping INTELLI...")
+    
+    # Stop hotword listener
+    if _hotword_flag is not None:
+        _hotword_flag.clear()
+        print("[SHUTDOWN] Hotword listener stopped")
+    
+    # Terminate main process
+    if _main_process and _main_process.is_alive():
+        _main_process.terminate()
+        _main_process.join(timeout=2)
+        if _main_process.is_alive():
+            _main_process.kill()
+        print("[SHUTDOWN] Main process terminated")
+    
+    print("[SHUTDOWN] INTELLI stopped successfully")
+    sys.exit(0)
 
-    # Start both processes
+def signal_handler(signum, frame):
+    """Handle Ctrl+C and termination signals."""
+    print("\n[RECEIVED] Termination signal")
+    stopINTELLI()
+
+# Register signal handlers
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+# Start both processes
 if __name__ == '__main__':
-        init_database()
-        capabilities = detect_capabilities(PlatformAdapter())
-        print(f"Detected OS: {capabilities.os_name}")
-        
-        p1 = multiprocessing.Process(target=startINTELLI)
-        p1.start()
-        
-        if platform.system().lower() == "windows":
-            subprocess.call([r'device.bat'])
-        
-        # Start hotword in a thread instead of process (shares eel instance)
-        hotword_thread = threading.Thread(target=startHotwordThread, daemon=True)
-        hotword_thread.start()
-        
-        p1.join()
+    print("=" * 50)
+    print("  INTELLI AI - Voice Assistant")
+    print("=" * 50)
+    print("  Commands:")
+    print("    Ctrl+C     - Stop INTELLI gracefully")
+    print("    close btn  - End session from UI")
+    print("=" * 50)
+    print()
+    
+    init_database()
+    capabilities = detect_capabilities(PlatformAdapter())
+    print(f"Detected OS: {capabilities.os_name}")
+    
+    _main_process = multiprocessing.Process(target=startINTELLI)
+    _main_process.start()
+    
+    if platform.system().lower() == "windows":
+        subprocess.call([r'device.bat'])
+    
+    # Start hotword in a thread instead of process (shares eel instance)
+    hotword_thread = threading.Thread(target=startHotwordThread, daemon=True)
+    hotword_thread.start()
+    
+    try:
+        _main_process.join()
+    except KeyboardInterrupt:
+        stopINTELLI()
 
-        print("system stop")
+    print("system stop")

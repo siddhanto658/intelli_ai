@@ -3,7 +3,7 @@ import webbrowser
 from typing import Callable
 
 import requests
-import speedtest_cli
+import speedtest
 import re
 from intelli.core.platform import PlatformAdapter
 
@@ -101,7 +101,7 @@ class MediaInfoHandlers:
     def handle_speedtest(self, query: str) -> bool:
         try:
             self.speak("Running internet speed test. This may take a moment.")
-            wifi = speedtest_cli.Speedtest()
+            wifi = speedtest.Speedtest()
             upload_net = int(wifi.upload() / 1048576)
             download_net = int(wifi.download() / 1048576)
             self.speak(f"Your download speed is {download_net} MB per second")

@@ -139,9 +139,14 @@ def _play_audio(filepath: str):
             
     except Exception as e:
         print(f"Play error: {e}")
-        # Simple fallback
+        # Simple fallback - cross-platform
         try:
-            os.startfile(filepath)
+            if platform.system() == "Windows":
+                os.startfile(filepath)
+            elif platform.system() == "Darwin":  # macOS
+                subprocess.run(["open", filepath], check=False)
+            else:  # Linux
+                subprocess.run(["xdg-open", filepath], check=False)
         except:
             pass
 

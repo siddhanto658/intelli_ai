@@ -57,7 +57,7 @@ def openCommand(query):
     if app_name != "":
         try:
             cursor.execute(
-                'SELECT path FROM sys_command WHERE name IN (?)', (app_name,))
+                'SELECT path FROM sys_command WHERE name = ?', (app_name,))
             results = cursor.fetchall()
 
             if len(results) != 0:
@@ -67,7 +67,7 @@ def openCommand(query):
 
             elif len(results) == 0: 
                 cursor.execute(
-                'SELECT url FROM web_command WHERE name IN (?)', (app_name,))
+                'SELECT url FROM web_command WHERE name = ?', (app_name,))
                 results = cursor.fetchall()
                 
                 if len(results) != 0:

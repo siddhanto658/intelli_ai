@@ -59,7 +59,7 @@ def _listen_for_stop():
     try:
         with sr.Microphone() as source:
             r.adjust_for_ambient_noise(source, duration=0.3)
-            while stop_listening.is_set:
+            while not stop_listening.is_set():  # Fixed: was incorrectly using .is_set as a property
                 try:
                     audio = r.listen(source, timeout=1, phrase_time_limit=2)
                     query = r.recognize_google(audio, language='en-in').lower()

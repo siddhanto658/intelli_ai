@@ -5,26 +5,9 @@ import time
 import queue
 import threading
 import requests
-import warnings
 from typing import List, Dict, Any, Callable, Optional, Generator
 
-# Suppress google deprecation warning
-warnings.filterwarnings("ignore", category=FutureWarning, module="google.generativeai")
-
 from intelli.core.config import get_settings
-
-# Try new google.genai SDK first, fallback to deprecated
-try:
-    import google.genai as genai
-    _USING_NEW_SDK = True
-except ImportError:
-    try:
-        import google.generativeai as genai
-        _USING_NEW_SDK = False
-    except ImportError:
-        genai = None
-        _USING_NEW_SDK = None
-        logging.warning("Google AI SDK not found. Install with: pip install google-genai")
 
 logger = logging.getLogger(__name__)
 
@@ -150,34 +133,15 @@ class HybridBrain:
         self._groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
         self._groq_history: List[Dict[str, str]] = []
         
-        # Gemini Backup
-        self._gemini_ready = False
-        self._using_new_sdk = _USING_NEW_SDK
-        if not self.settings.use_local_llm and self.settings.gemini_api_key and self.settings.gemini_api_key != "your_gemini_api_key_here":
-            if genai is not None:
-                try:
-                    if _USING_NEW_SDK:
-                        genai.configure(api_key=self.settings.gemini_api_key)
-                        self.gemini_client = genai.Client()
-                        self._gemini_model = "gemini-2.0-flash"
-                    else:
-                        genai.configure(api_key=self.settings.gemini_api_key)
-                        self.gemini_model = genai.GenerativeModel('gemini-2.0-flash')
-                        self.chat_session = self.gemini_model.start_chat(history=[])
-                    self._gemini_ready = True
-                    logger.info("Gemini AI initialized as backup")
-                except Exception as e:
-                    logger.warning(f"Gemini backup init failed: {e}")
+        # Using Groq only (no Gemini)
         
         # Conversation memory
         self.memory = ConversationMemory()
         
         if self._groq_api_key:
-            logger.info("Groq API - PRIMARY AI configured")
-        if self._gemini_ready:
-            logger.info("Gemini API - BACKUP AI configured")
-        if not self._groq_api_key and not self._gemini_ready:
-            logger.warning("No AI API keys found!")
+            logger.info("Groq API configured (llama-3.3-70b-versatile)")
+        else:
+            logger.warning("No Groq API key found! Set GROQ_API_KEY environment variable.")
 
     def detect_language(self, text: str) -> str:
         text_lower = text.lower()
@@ -219,104 +183,6 @@ class HybridBrain:
         self._groq_history = []
         self.memory.clear()
         logger.info("Conversation history cleared")
-
-    # ---------- Streaming Response Generator ----------
-    def generate_stream(self, prompt: str, on_token: Callable[[str], None], system_prompt: str = "") -> str:
-        """
-        Generate streaming response with callback for each token.
-        Returns the complete response when done.
-        """
-        from intelli.core.thread_safe import stop_listening
-        processed_prompt = self.preprocess_multilingual(prompt)
-        
-        # Add context from memory
-        context = self.memory.get_conversation_for_ai(limit=6)
-        if context:
-            full_prompt = f"Previous conversation:\n{context}\n\nCurrent request: {processed_prompt}"
-        else:
-            full_prompt = processed_prompt
-        
-        full_response = []
-        
-        # Check for stop
-        if stop_listening.is_set:
-            return ""
-        
-        # Groq Streaming
-        if self._groq_api_key:
-            try:
-                self._groq_history.append({"role": "user", "content": full_prompt})
-                messages = self._groq_history[-10:]
-                
-                headers = {
-                    "Authorization": f"Bearer {self._groq_api_key}",
-                    "Content-Type": "application/json"
-                }
-                payload = {
-                    "model": self._groq_model,
-                    "messages": messages,
-                    "temperature": 0.7,
-                    "max_tokens": 1024,
-                    "stream": True
-                }
-                
-                response = requests.post(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    headers=headers,
-                    json=payload,
-                    stream=True,
-                    timeout=60
-                )
-                response.raise_for_status()
-                
-                for line in response.iter_lines():
-                    if stop_listening.is_set:
-                        break
-                    if line:
-                        line_text = line.decode('utf-8')
-                        if line_text.startswith('data: '):
-                            data = line_text[6:]
-                            if data.strip() == '[DONE]':
-                                break
-                            try:
-                                json_data = json.loads(data)
-                                if 'choices' in json_data and len(json_data['choices']) > 0:
-                                    delta = json_data['choices'][0].get('delta', {})
-                                    if 'content' in delta:
-                                        token = delta['content']
-                                        full_response.append(token)
-                                        on_token(token)
-                            except json.JSONDecodeError:
-                                continue
-                
-                if not stop_listening.is_set:
-                    assistant_msg = ''.join(full_response)
-                    self._groq_history.append({"role": "assistant", "content": assistant_msg})
-                    self.memory.add_message("user", prompt)
-                    self.memory.add_message("assistant", assistant_msg)
-                    return assistant_msg
-                
-            except Exception as e:
-                logger.error(f"Groq streaming error: {e}")
-        
-        # Fallback to Gemini non-streaming
-        if self._gemini_ready:
-            result = self._call_gemini(full_prompt)
-            if result:
-                for char in result:
-                    if stop_listening.is_set:
-                        break
-                    full_response.append(char)
-                    on_token(char)
-                    time.sleep(0.02)  # Simulate streaming
-                
-                assistant_msg = ''.join(full_response)
-                if not stop_listening.is_set:
-                    self.memory.add_message("user", prompt)
-                    self.memory.add_message("assistant", assistant_msg)
-                    return assistant_msg
-        
-        return ''.join(full_response)
 
     # ---------- Streaming with offline fallback ----------
     def generate_stream(self, prompt: str, on_token: Callable[[str], None], system_prompt: str = "") -> str:
@@ -396,21 +262,7 @@ Assistant:"""
             except Exception as e:
                 logger.error(f"Groq streaming error: {e}")
         
-        # Try Gemini
-        if self._gemini_ready:
-            result = self._call_gemini(full_prompt)
-            if result:
-                for char in result:
-                    full_response.append(char)
-                    on_token(char)
-                    time.sleep(0.02)
-                
-                assistant_msg = ''.join(full_response)
-                self.memory.add_message("user", prompt)
-                self.memory.add_message("assistant", assistant_msg)
-                return assistant_msg
-        
-        # Offline fallback
+        # Offline fallback only (no Gemini)
         offline = self._get_offline_response(processed_prompt)
         if offline:
             for char in offline:
@@ -434,12 +286,7 @@ Assistant:"""
             result = self._call_groq(processed_prompt)
             if result and "encountered an error" not in result.lower() and "both my brains" not in result.lower():
                 return result
-            logger.warning("Groq failed, trying Gemini backup...")
-        
-        if self._gemini_ready:
-            result = self._call_gemini(processed_prompt)
-            if result is not None:
-                return result
+            logger.error("Groq API failed")
         
         # Try offline response for common queries
         offline = self._get_offline_response(processed_prompt)
@@ -490,25 +337,6 @@ Assistant:"""
         except Exception as e:
             logger.error(f"Local LLM Error: {e}")
             return "Sorry, my local brain encountered an error."
-
-    def _call_gemini(self, prompt: str) -> Optional[str]:
-        if not self._gemini_ready:
-            return None
-        try:
-            if self._using_new_sdk:
-                response = self.gemini_client.models.generate_content(
-                    model=self._gemini_model,
-                    contents=prompt
-                )
-                return response.text
-            else:
-                if not hasattr(self, 'chat_session'):
-                    self.chat_session = self.gemini_model.start_chat(history=[])
-                response = self.chat_session.send_message(prompt)
-                return response.text
-        except Exception as e:
-            logger.error(f"Gemini API Error: {e}")
-            return None
 
     def _call_groq(self, prompt: str) -> str:
         if not self._groq_api_key:

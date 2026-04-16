@@ -272,13 +272,6 @@ def _handle_ai_response(query: str, use_streaming: bool = True):
         except:
             pass
         
-        # Start stop listener
-        if not stop_listening.is_set:
-            stop_listening.set()
-            is_speaking.set()
-            listen_thread = threading.Thread(target=_listen_for_stop, daemon=True)
-            listen_thread.start()
-        
         # Generate streaming response
         result = ai_brain.generate_stream(query, _streaming_callback)
         
@@ -287,7 +280,7 @@ def _handle_ai_response(query: str, use_streaming: bool = True):
         is_speaking.clear()
         
         if result:
-            # Speak the response if not stopped
+            # Speak the response
             speak(result)
         else:
             try:

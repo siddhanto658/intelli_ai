@@ -101,9 +101,7 @@ def speak(text, start_listening=False):
         except Exception as e:
             log_warning(f"eel display error: {e}")
         
-        # Don't start stop-listener thread - it causes microphone conflicts
-        # The user can press Esc or click stop button instead
-        
+        # No background stop-listener - stop via button/keyboard only
         speak_text(text, _tts_engine)
         
     finally:
@@ -477,11 +475,8 @@ def stopCurrentAction():
     _conversation_mode = False
     _streaming_active = False
     
-    try:
-        stop_speech()
-        log_info("Speech stop signal sent")
-    except Exception as e:
-        log_error(f"Error stopping speech: {e}")
+    # Don't stop audio - let it finish naturally
+    # Stop button only handles UI state
     
     stop_listening.clear()
     is_speaking.clear()

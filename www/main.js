@@ -63,10 +63,8 @@ $(document).ready(function () {
     function applyTheme(theme) {
         if (theme === 'light') {
             $('body').addClass('light-theme');
-            $('#themeToggle i').removeClass('bi-moon-stars').addClass('bi-sun');
         } else {
             $('body').removeClass('light-theme');
-            $('#themeToggle i').removeClass('bi-sun').addClass('bi-moon-stars');
         }
         localStorage.setItem('intelli_theme', theme);
     }
@@ -93,10 +91,34 @@ $(document).ready(function () {
         }
     }
 
-    // Clear chat
-    $('#clearChatBtn').click(function () {
-        eel.clearChat();
-        showToast('info', 'Chat cleared');
+    // Mic button - main mic button
+    $('#MicBtn').click(function () {
+        console.log('Mic clicked');
+        const startupSnd = localStorage.getItem('intelli_startupSound');
+        if (startupSnd === null || startupSnd === 'true') {
+            eel.playAssistantSound();
+        }
+        eel.allCommands();
+    });
+
+    // Mic button in Siri mode
+    $('#MicBtnSiri').click(function () {
+        console.log('Siri Mic clicked');
+        const startupSnd = localStorage.getItem('intelli_startupSound');
+        if (startupSnd === null || startupSnd === 'true') {
+            eel.playAssistantSound();
+        }
+        eel.allCommands();
+    });
+
+    // Record button for wake word
+    $('#RecordBtn').click(function () {
+        console.log('Record clicked');
+        const startupSnd = localStorage.getItem('intelli_startupSound');
+        if (startupSnd === null || startupSnd === 'true') {
+            eel.playAssistantSound();
+        }
+        eel.allCommands();
     });
 
     // Stop button
@@ -113,51 +135,59 @@ $(document).ready(function () {
         }
     });
 
-    // Mic button
-    $('#micBtn').click(function () {
-        const startupSnd = localStorage.getItem('intelli_startupSound');
-        if (startupSnd === null || startupSnd === 'true') {
-            eel.playAssistantSound();
+    // Send message from main input
+    $('#SendBtn').click(function () {
+        const message = $('#chatbox').val();
+        if (message.trim() !== '') {
+            const startupSnd = localStorage.getItem('intelli_startupSound');
+            if (startupSnd === null || startupSnd === 'true') {
+                eel.playAssistantSound();
+            }
+            eel.allCommands(message);
+            $('#chatbox').val('');
         }
-        eel.allCommands();
     });
 
-    // Input field - toggle send/mic button
-    function updateInputState(value) {
-        if (value.length === 0) {
-            $('#micBtn').removeClass('hidden');
-            $('#sendBtn').addClass('hidden');
-        } else {
-            $('#micBtn').addClass('hidden');
-            $('#sendBtn').removeClass('hidden');
+    // Send message from Siri input
+    $('#SendBtnSiri').click(function () {
+        const message = $('#chatbox-siri').val();
+        if (message.trim() !== '') {
+            const startupSnd = localStorage.getItem('intelli_startupSound');
+            if (startupSnd === null || startupSnd === 'true') {
+                eel.playAssistantSound();
+            }
+            eel.allCommands(message);
+            $('#chatbox-siri').val('');
         }
-    }
-
-    $('#chatInput').on('input', function () {
-        updateInputState($(this).val());
     });
 
-    // Send message
-    function sendMessage(message) {
-        if (message.trim() === '') return;
-        
-        const startupSnd = localStorage.getItem('intelli_startupSound');
-        if (startupSnd === null || startupSnd === 'true') {
-            eel.playAssistantSound();
-        }
-        
-        eel.allCommands(message);
-        $('#chatInput').val('');
-        updateInputState('');
-    }
-
-    $('#sendBtn').click(function () {
-        sendMessage($('#chatInput').val());
-    });
-
-    $('#chatInput').keypress(function (e) {
+    // Enter key for main input
+    $('#chatbox').keypress(function (e) {
         if (e.which === 13) {
-            sendMessage($(this).val());
+            const message = $(this).val();
+            if (message.trim() !== '') {
+                const startupSnd = localStorage.getItem('intelli_startupSound');
+                if (startupSnd === null || startupSnd === 'true') {
+                    eel.playAssistantSound();
+                }
+                eel.allCommands(message);
+                $(this).val('');
+            }
+        }
+    });
+
+    // Enter key for Siri input
+    $('#chatbox-siri').keypress(function (e) {
+        if (e.which === 13) {
+            const message = $(this).val();
+            if (message.trim() !== '') {
+                const startupSnd = localStorage.getItem('intelli_startupSound');
+                if (startupSnd === null || startupSnd === 'true') {
+                    eel.playAssistantSound();
+                }
+                eel.allCommands(message);
+                $(this).val('');
+            }
         }
     });
 
@@ -166,7 +196,6 @@ $(document).ready(function () {
     $(document).keydown(function (e) {
         // Ignore if typing in input
         if ($(e.target).is('input, textarea')) {
-            // Allow Escape to blur
             if (e.key === 'Escape') {
                 e.target.blur();
                 return;
@@ -177,16 +206,7 @@ $(document).ready(function () {
         // Ctrl/Cmd + J - Voice input
         if ((e.ctrlKey || e.metaKey) && e.key === 'j') {
             e.preventDefault();
-            $('#micBtn').click();
-            return;
-        }
-
-        // Ctrl/Cmd + Enter - Send text
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            e.preventDefault();
-            if ($('#chatInput').val().trim()) {
-                sendMessage($('#chatInput').val());
-            }
+            $('#MicBtn').click();
             return;
         }
 
@@ -201,7 +221,6 @@ $(document).ready(function () {
         if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
             e.preventDefault();
             eel.clearChat();
-            showToast('info', 'Chat cleared');
             return;
         }
 
@@ -218,65 +237,5 @@ $(document).ready(function () {
             applyTheme(newTheme);
             return;
         }
-
-        // M - Toggle mute (stop listening)
-        if (e.key === 'm' || e.key === 'M') {
-            e.preventDefault();
-            eel.stopCurrentAction();
-            showToast('info', 'Stopped');
-            return;
-        }
-
-        // ? - Show shortcuts help
-        if (e.key === '?') {
-            showShortcutsHelp();
-            return;
-        }
     });
-
-    function showShortcutsHelp() {
-        showToast('info', `
-            <strong>Shortcuts:</strong><br>
-            Ctrl+J - Voice input<br>
-            Ctrl+Enter - Send message<br>
-            Escape - Stop/Cancel<br>
-            Ctrl+L - Clear chat<br>
-            T - Toggle theme<br>
-            M - Stop action<br>
-            ? - This help
-        `, 6000);
-    }
-
-    function showToast(type, message, duration = 4000) {
-        const container = $('#toastContainer');
-        const toast = $(`
-            <div class="toast ${type}">
-                <i class="bi toast-icon ${getToastIcon(type)}"></i>
-                <span class="toast-message">${message}</span>
-                <button class="toast-close"><i class="bi bi-x"></i></button>
-            </div>
-        `);
-        
-        container.append(toast);
-        toast.find('.toast-close').click(() => removeToast(toast));
-        
-        if (duration > 0) {
-            setTimeout(() => removeToast(toast), duration);
-        }
-    }
-
-    function getToastIcon(type) {
-        const icons = {
-            error: 'bi-x-circle-fill',
-            success: 'bi-check-circle-fill',
-            warning: 'bi-exclamation-circle-fill',
-            info: 'bi-info-circle-fill'
-        };
-        return icons[type] || icons.info;
-    }
-
-    function removeToast(toast) {
-        toast.addClass('toast-out');
-        setTimeout(() => toast.remove(), 200);
-    }
 });

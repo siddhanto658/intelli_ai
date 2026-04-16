@@ -63,10 +63,10 @@ $(document).ready(function () {
     function applyTheme(theme) {
         if (theme === 'light') {
             $('body').addClass('light-theme');
-            $('#themeToggle i').removeClass('bi-moon-fill').addClass('bi-sun-fill');
+            $('#themeToggle i').removeClass('bi-moon-stars').addClass('bi-sun');
         } else {
             $('body').removeClass('light-theme');
-            $('#themeToggle i').removeClass('bi-sun-fill').addClass('bi-moon-fill');
+            $('#themeToggle i').removeClass('bi-sun').addClass('bi-moon-stars');
         }
         localStorage.setItem('intelli_theme', theme);
     }

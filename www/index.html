@@ -26,37 +26,39 @@
 
     <div class="app-container">
 
-        <!-- Header with AI State -->
+        <!-- Header -->
         <header class="app-header">
             <div class="header-brand">
                 <div class="brand-logo">
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                        <circle cx="14" cy="14" r="12" stroke="url(#grad1)" stroke-width="2"/>
-                        <circle cx="14" cy="14" r="6" fill="url(#grad1)"/>
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
                         <defs>
-                            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:#8b5cf6"/>
+                            <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#a855f7"/>
                                 <stop offset="100%" style="stop-color:#06b6d4"/>
                             </linearGradient>
                         </defs>
+                        <circle cx="16" cy="16" r="14" stroke="url(#brandGrad)" stroke-width="1.5" fill="none"/>
+                        <circle cx="16" cy="16" r="6" fill="url(#brandGrad)"/>
+                        <circle cx="16" cy="16" r="2" fill="#fff"/>
                     </svg>
                 </div>
-                <span class="brand-name">INTELLI</span>
+                <div class="brand-text">
+                    <span class="brand-name">INTELLI</span>
+                    <span class="brand-tagline">AI Assistant</span>
+                </div>
             </div>
 
             <!-- AI State Indicator -->
             <div class="ai-state-container">
                 <div id="aiState" class="ai-state idle">
-                    <div class="state-icon">
-                        <i class="bi bi-circle-fill"></i>
-                    </div>
-                    <div class="state-text">Ready</div>
+                    <span class="state-indicator"></span>
+                    <span class="state-text">Ready</span>
                 </div>
             </div>
 
             <div class="header-actions">
                 <button id="themeToggle" class="icon-btn" title="Toggle Theme (T)">
-                    <i class="bi bi-moon-fill"></i>
+                    <i class="bi bi-moon-stars"></i>
                 </button>
                 <button id="stopBtn" class="icon-btn" title="Stop (Esc)">
                     <i class="bi bi-stop-circle"></i>
@@ -72,206 +74,124 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Idle State - Orb with Particle Animation -->
+            
+            <!-- Idle State -->
             <div id="idleVisual" class="idle-visual">
-                <div class="orb-wrapper">
+                <div class="orb-container">
                     <canvas id="canvasOne" width="700" height="420"></canvas>
-                    <div id="INTELLIHood">
-                        <div class="square">
-                            <span class="circle"></span>
-                            <span class="circle"></span>
-                            <span class="circle"></span>
-                        </div>
+                    <div class="orb-overlay">
+                        <div class="ring ring-1"></div>
+                        <div class="ring ring-2"></div>
+                        <div class="ring ring-3"></div>
                     </div>
-                    <div class="orb-glow"></div>
-                    <div class="orb">
-                        <div class="orb-inner">
-                            <div class="orb-shine"></div>
-                        </div>
-                    </div>
-                    <div class="orb-ring ring-1"></div>
-                    <div class="orb-ring ring-2"></div>
+                    <div class="center-glow"></div>
                 </div>
-                <p class="orb-hint">Say "Hey INTELLI" or click mic</p>
+                <p class="orb-hint">
+                    <span class="hint-icon"><i class="bi bi-mic"></i></span>
+                    Say "Hey INTELLI" or type to chat
+                </p>
             </div>
 
-            <!-- Listening Display - Shows what AI is hearing -->
-            <div id="listeningDisplay" class="listening-display hidden">
-                <div class="listening-icon">
-                    <div class="sound-wave">
+            <!-- Listening State -->
+            <div id="listeningDisplay" class="visual-state hidden">
+                <div class="listening-container">
+                    <div class="listening-orb">
+                        <div class="pulse-ring"></div>
+                        <div class="pulse-ring delay-1"></div>
+                        <div class="pulse-ring delay-2"></div>
+                        <div class="orb-core"></div>
+                    </div>
+                    <div class="listening-waves">
                         <span></span><span></span><span></span><span></span><span></span>
                     </div>
                 </div>
-                <div class="listening-text" id="listeningText">Listening...</div>
-                <div class="transcript-preview" id="transcriptPreview"></div>
+                <p class="listening-status">Listening...</p>
+                <p class="listening-transcript" id="transcriptPreview"></p>
             </div>
 
-            <!-- Processing Visual -->
-            <div id="processingVisual" class="processing-visual hidden">
-                <div class="processing-ring"></div>
-                <div class="processing-core">
-                    <i class="bi bi-lightning-charge"></i>
-                </div>
-            </div>
-
-            <!-- Speaking Visual -->
-            <div id="speakingVisual" class="speaking-visual hidden">
-                <div class="speaking-bars">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            </div>
-
-            <!-- Response Card -->
-            <div id="responseCard" class="response-card hidden">
-                <div class="response-content">
-                    <div class="response-avatar">
-                        <i class="bi bi-robot"></i>
+            <!-- Processing State -->
+            <div id="processingVisual" class="visual-state hidden">
+                <div class="processing-container">
+                    <div class="processing-orb">
+                        <div class="orb-core processing"></div>
+                        <div class="processing-rings">
+                            <span></span><span></span><span></span>
+                        </div>
                     </div>
-                    <div class="response-text" id="responseText"></div>
+                </div>
+                <p class="processing-status">Thinking<span class="dots"></span></p>
+            </div>
+
+            <!-- Speaking State -->
+            <div id="speakingVisual" class="visual-state hidden">
+                <div class="speaking-container">
+                    <div class="speaking-orb">
+                        <div class="orb-core speaking"></div>
+                        <div class="sound-waves">
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </div>
+                <p class="speaking-status">Speaking...</p>
+            </div>
+
+            <!-- Chat Interface -->
+            <div id="chatContainer" class="chat-container hidden">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-empty">
+                        <i class="bi bi-chat-dots"></i>
+                        <p>Start a conversation with INTELLI</p>
+                    </div>
+                </div>
+                
+                <!-- Response Card -->
+                <div id="responseCard" class="response-card hidden">
+                    <div class="response-content">
+                        <div class="response-avatar">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <div class="response-text" id="responseText"></div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="chat-input-container">
+                    <div class="input-wrapper">
+                        <button class="mic-btn" id="micBtn" title="Voice Input (Ctrl+J)">
+                            <i class="bi bi-mic-fill"></i>
+                        </button>
+                        <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." autocomplete="off">
+                        <button class="send-btn" id="sendBtn" title="Send">
+                            <i class="bi bi-send"></i>
+                        </button>
+                    </div>
+                    <p class="input-hint">Press Enter to send • Ctrl+J for voice</p>
                 </div>
             </div>
+
         </main>
 
-        <!-- Input Area (Fixed Bottom) -->
-        <footer class="input-area">
-            <div class="input-wrapper">
-                <button id="ChatBtn" class="icon-btn-sm" data-bs-toggle="offcanvas" data-bs-target="#chatPanel" title="History">
-                    <i class="bi bi-chat-dots"></i>
-                </button>
-                <div class="input-field-wrapper">
-                    <input type="text" id="chatInput" class="chat-input" placeholder="Type a message...">
-                    <button id="sendBtn" class="send-btn hidden">
-                        <i class="bi bi-send"></i>
-                    </button>
-                </div>
-                <button id="micBtn" class="mic-btn">
-                    <i class="bi bi-mic"></i>
-                </button>
-            </div>
-            <div class="input-hint">
-                <span>Press <kbd>Enter</kbd> to send</span>
-                <span class="divider">|</span>
-                <span>Click mic for voice</span>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Chat History Panel -->
-    <div class="offcanvas offcanvas-start chat-panel" data-bs-scroll="true" tabindex="-1" id="chatPanel">
-        <div class="offcanvas-header">
-            <h5 class="panel-title"><i class="bi bi-chat-dots me-2"></i>Conversation</h5>
-            <div class="d-flex gap-2">
-                <button id="clearChatBtn" class="btn btn-sm btn-outline-light" title="Clear">
-                    <i class="bi bi-trash"></i>
-                </button>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
-            </div>
-        </div>
-        <div id="chatMessages" class="panel-body">
-            <div class="chat-empty">
-                <i class="bi bi-chat"></i>
-                <p>Start a conversation</p>
-            </div>
-        </div>
     </div>
 
     <!-- Settings Panel -->
-    <div class="offcanvas offcanvas-end settings-panel" tabindex="-1" id="settingsPanel">
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="settingsPanel">
         <div class="offcanvas-header">
-            <h5 class="panel-title"><i class="bi bi-sliders me-2"></i>Settings</h5>
+            <h5 class="offcanvas-title">Settings</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body">
-
-            <div class="settings-section">
-                <h6 class="section-title"><i class="bi bi-mic me-2"></i>Voice</h6>
-                <div class="setting-item">
-                    <label>Speech Speed</label>
-                    <select id="voiceSpeed" class="setting-select">
-                        <option value="+0%">Slow</option>
-                        <option value="+10%">Normal</option>
-                        <option value="+15%" selected>Fast</option>
-                        <option value="+25%">Very Fast</option>
-                    </select>
-                </div>
-                <div class="setting-item">
-                    <label>Voice</label>
-                    <select id="voiceName" class="setting-select">
-                        <option value="en-US-AriaNeural" selected>Aria</option>
-                        <option value="en-US-JennyNeural">Jenny</option>
-                        <option value="en-GB-SoniaNeural">Sonia (UK)</option>
-                        <option value="en-IN-NeerjaNeural">Neerja (IN)</option>
-                        <option value="en-US-GuyNeural">Guy</option>
-                    </select>
-                </div>
-                <div class="setting-item">
-                    <label>Startup Sound</label>
-                    <label class="toggle">
-                        <input type="checkbox" id="startupSound" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h6 class="section-title"><i class="bi bi-cpu me-2"></i>AI Brain</h6>
-                <div class="setting-item">
-                    <label>Model</label>
-                    <select id="aiModel" class="setting-select">
-                        <option value="groq" selected>Groq (Fast)</option>
-                        <option value="gemini">Gemini</option>
-                        <option value="local">Local (Ollama)</option>
-                    </select>
-                </div>
-                <div class="setting-item">
-                    <label>Groq Model</label>
-                    <select id="groqModel" class="setting-select">
-                        <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B</option>
-                        <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
-                        <option value="gemma2-9b-it">Gemma 2 9B</option>
-                    </select>
-                </div>
-                <div class="setting-item">
-                    <label>API Status</label>
-                    <div class="api-status">
-                        <span id="geminiStatus" class="status-badge"><i class="bi bi-circle"></i> Gemini</span>
-                        <span id="groqStatus" class="status-badge"><i class="bi bi-circle"></i> Groq</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h6 class="section-title"><i class="bi bi-palette me-2"></i>Display</h6>
-                <div class="setting-item">
-                    <label>Permission Prompts</label>
-                    <label class="toggle">
-                        <input type="checkbox" id="permissionPrompts" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="settings-section about">
-                <p class="about-text">INTELLI AI v3.0</p>
-                <p class="about-text muted">Powered by Groq + Gemini</p>
-            </div>
-
-            <button id="saveSettingsBtn" class="save-btn">Save Settings</button>
+            <!-- Settings content -->
         </div>
     </div>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
         crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="eel.js"></script>
     <script src="script.js"></script>
-    <script src="main.js"></script>
     <script src="controller.js"></script>
-    <script src="/eel.js"></script>
+    <script src="main.js"></script>
 </body>
 
 </html>

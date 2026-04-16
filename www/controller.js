@@ -1,5 +1,4 @@
 $(document).ready(function () {
-
     let currentTypewriter = null;
     let streamingActive = false;
     let streamBuffer = "";
@@ -10,16 +9,15 @@ $(document).ready(function () {
     function applyTheme(theme) {
         if (theme === 'light') {
             document.body.classList.add('light-theme');
-            $('#themeToggle i').removeClass('bi-moon-fill').addClass('bi-sun-fill');
+            $('#themeToggle i').removeClass('bi-moon-stars').addClass('bi-sun');
         } else {
             document.body.classList.remove('light-theme');
-            $('#themeToggle i').removeClass('bi-sun-fill').addClass('bi-moon-fill');
+            $('#themeToggle i').removeClass('bi-sun').addClass('bi-moon-stars');
         }
         currentTheme = theme;
         localStorage.setItem('intelli_theme', theme);
     }
 
-    // Apply saved theme
     applyTheme(currentTheme);
 
     // AI State management
@@ -33,10 +31,10 @@ $(document).ready(function () {
 
     const STATE_LABELS = {
         idle: 'Ready',
-        listening: 'Listening...',
-        processing: 'Thinking...',
-        speaking: 'Speaking...',
-        streaming: 'Responding...'
+        listening: 'Listening',
+        processing: 'Thinking',
+        speaking: 'Speaking',
+        streaming: 'Responding'
     };
 
     function setAIState(state) {
@@ -181,29 +179,11 @@ $(document).ready(function () {
         type();
     }
 
-    eel.expose(ShowHood);
-    function ShowHood() {
-        stopTypewriter();
-        setAIState('idle');
-        showIdleVisual();
-    }
-
-    eel.expose(senderText);
-    function senderText(message) {
-        addToChat('user', message);
-        showProcessingVisual();
-        setAIState('processing');
-    }
-
-    eel.expose(receiverText);
-    function receiverText(message) {
-        showSpeakingVisual();
-        setAIState('speaking');
-    }
-
+    // Show different visual states
     function showIdleVisual() {
         hideAllVisuals();
         $('#idleVisual').removeClass('hidden');
+        setAIState('idle');
     }
 
     function showListeningVisual() {
@@ -215,29 +195,46 @@ $(document).ready(function () {
     function showProcessingVisual() {
         hideAllVisuals();
         $('#processingVisual').removeClass('hidden');
+        setAIState('processing');
     }
 
     function showSpeakingVisual() {
         hideAllVisuals();
         $('#speakingVisual').removeClass('hidden');
+        setAIState('speaking');
+    }
+
+    function showChatContainer() {
+        hideAllVisuals();
+        $('#chatContainer').removeClass('hidden');
     }
 
     function hideAllVisuals() {
-        $('#idleVisual, #listeningVisual, #listeningDisplay, #processingVisual, #speakingVisual').addClass('hidden');
+        $('#idleVisual, #listeningDisplay, #processingVisual, #speakingVisual, #chatContainer').addClass('hidden');
     }
 
-    eel.expose(updateListeningText);
-    function updateListeningText(text) {
-        if (text) {
-            $('#listeningText').text(text);
-        }
+    // Legacy functions for compatibility
+    eel.expose(ShowHood);
+    function ShowHood() {
+        stopTypewriter();
+        showIdleVisual();
     }
 
-    eel.expose(updateTranscript);
-    function updateTranscript(text) {
-        $('#transcriptPreview').text(text);
+    eel.expose(senderText);
+    function senderText(message) {
+        addToChat('user', message);
+        showChatContainer();
+        setAIState('processing');
     }
 
+    eel.expose(receiverText);
+    function receiverText(message) {
+        showChatContainer();
+        showSpeakingVisual();
+        setAIState('speaking');
+    }
+
+    // Chat functions
     function addToChat(type, message) {
         const chatMessages = $('#chatMessages');
         chatMessages.find('.chat-empty').remove();
@@ -260,26 +257,32 @@ $(document).ready(function () {
     function clearChat() {
         $('#chatMessages').html(`
             <div class="chat-empty">
-                <i class="bi bi-chat"></i>
-                <p>Start a conversation</p>
+                <i class="bi bi-chat-dots"></i>
+                <p>Start a conversation with INTELLI</p>
             </div>
         `);
+        $('#responseCard').addClass('hidden');
     }
 
+    // Update listening display
+    eel.expose(updateListeningText);
+    function updateListeningText(text) {
+        if (text) {
+            $('.listening-status').text(text);
+        }
+    }
+
+    eel.expose(updateTranscript);
+    function updateTranscript(text) {
+        $('#transcriptPreview').text(text);
+    }
+
+    // Helper
     function escapeHtml(text) {
-        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
-    // Initialize
-    showIdleVisual();
-    setAIState('idle');
-
-    eel.getSystemCapabilities().then((capabilities) => {
-        console.log('INTELLI capabilities:', capabilities);
-    }).catch(() => {
-        console.log('Could not fetch system capabilities.');
-    });
+    // Theme toggle from main.js handles this
 });

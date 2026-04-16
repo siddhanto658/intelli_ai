@@ -321,7 +321,6 @@ class HybridBrain:
     # ---------- Streaming with offline fallback ----------
     def generate_stream(self, prompt: str, on_token: Callable[[str], None], system_prompt: str = "") -> str:
         """Generate streaming response with offline fallback."""
-        from intelli.core.thread_safe import stop_listening
         processed_prompt = self.preprocess_multilingual(prompt)
         
         # Add context from memory
@@ -332,9 +331,6 @@ class HybridBrain:
             full_prompt = processed_prompt
         
         full_response = []
-        
-        if stop_listening.is_set:
-            return ""
         
         # Try streaming APIs first
         if self._groq_api_key:
@@ -364,8 +360,6 @@ class HybridBrain:
                 response.raise_for_status()
                 
                 for line in response.iter_lines():
-                    if stop_listening.is_set:
-                        break
                     if line:
                         line_text = line.decode('utf-8')
                         if line_text.startswith('data: '):
@@ -383,12 +377,11 @@ class HybridBrain:
                             except json.JSONDecodeError:
                                 continue
                 
-                if not stop_listening.is_set:
-                    assistant_msg = ''.join(full_response)
-                    self._groq_history.append({"role": "assistant", "content": assistant_msg})
-                    self.memory.add_message("user", prompt)
-                    self.memory.add_message("assistant", assistant_msg)
-                    return assistant_msg
+                assistant_msg = ''.join(full_response)
+                self._groq_history.append({"role": "assistant", "content": assistant_msg})
+                self.memory.add_message("user", prompt)
+                self.memory.add_message("assistant", assistant_msg)
+                return assistant_msg
                 
             except Exception as e:
                 logger.error(f"Groq streaming error: {e}")
@@ -398,24 +391,22 @@ class HybridBrain:
             result = self._call_gemini(full_prompt)
             if result:
                 for char in result:
-                    if stop_listening.is_set:
-                        break
                     full_response.append(char)
                     on_token(char)
                     time.sleep(0.02)
                 
                 assistant_msg = ''.join(full_response)
-                if not stop_listening.is_set:
-                    self.memory.add_message("user", prompt)
-                    self.memory.add_message("assistant", assistant_msg)
-                    return assistant_msg
+                self.memory.add_message("user", prompt)
+                self.memory.add_message("assistant", assistant_msg)
+                return assistant_msg
         
         # Offline fallback
         offline = self._get_offline_response(processed_prompt)
         if offline:
             for char in offline:
-                if stop_listening.is_set:
-                    break
+                full_response.append(char)
+                on_token(char)
+                time.sleep(0.01)
                 full_response.append(char)
                 on_token(char)
                 time.sleep(0.02)

@@ -320,23 +320,33 @@ class HybridBrain:
 
     # ---------- Streaming with offline fallback ----------
     def generate_stream(self, prompt: str, on_token: Callable[[str], None], system_prompt: str = "") -> str:
-        """Generate streaming response with offline fallback."""
+        """Generate streaming response with improved AI behavior."""
         processed_prompt = self.preprocess_multilingual(prompt)
         
-        # Add context from memory
-        context = self.memory.get_conversation_for_ai(limit=6)
-        if context:
-            full_prompt = f"Previous conversation:\n{context}\n\nCurrent request: {processed_prompt}"
-        else:
-            full_prompt = processed_prompt
+        # Better system prompt for more natural AI behavior
+        ai_prompt = f"""You are INTELLI, a helpful, friendly, and intelligent AI assistant. 
+You respond naturally and concisely. You can help with:
+- Answering questions
+- Having conversations
+- Providing explanations
+- Helping with tasks
+- Being creative
+
+Keep responses friendly, conversational, and not too long. Don't be overly formal.
+
+Previous conversation:
+{self.memory.get_conversation_for_ai(limit=8)}
+
+User: {processed_prompt}
+Assistant:"""
         
         full_response = []
         
-        # Try streaming APIs first
+        # Try Groq
         if self._groq_api_key:
             try:
-                self._groq_history.append({"role": "user", "content": full_prompt})
-                messages = self._groq_history[-10:]
+                self._groq_history.append({"role": "user", "content": ai_prompt})
+                messages = self._groq_history[-12:]
                 
                 headers = {
                     "Authorization": f"Bearer {self._groq_api_key}",

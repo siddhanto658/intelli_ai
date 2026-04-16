@@ -5,13 +5,6 @@ from intelli.handlers.social import SocialHandlers
 from intelli.handlers.communications import CommunicationsHandlers
 from intelli.handlers.utility import UtilityHandlers
 from intelli.handlers.generation import GenerationHandlers
-from intelli.handlers.dictionary import DictionaryAPI
-from intelli.handlers.openweather import OpenMeteoWeather
-
-
-# Quick handlers for new APIs
-_dictionary_handler = DictionaryAPI._static_method
-_weather_handler = OpenMeteoWeather
 
 
 def build_router(
@@ -109,6 +102,7 @@ def _handle_dictionary(query: str) -> bool:
     """Handle dictionary lookups."""
     import re
     from command import speak
+    from intelli.handlers.dictionary import DictionaryAPI
     
     # Extract word to define
     patterns = [

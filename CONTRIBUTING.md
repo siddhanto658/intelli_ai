@@ -1,103 +1,131 @@
-# INTELLI AI - Contributing Guide
+# Contributor Guidelines - INTELLI AI
 
-We welcome contributions from team members! Here's how to help:
+## Team Members
 
-## 🎯 Ways to Contribute
-
-### 1. Code Contributions
-- Fix bugs
-- Add new features
-- Improve AI prompts
-- Optimize performance
-
-### 2. Documentation
-- Improve README
-- Add code comments
-- Create guides
-
-### 3. Testing
-- Test new features
-- Report bugs
-- Suggest improvements
+| Roll No. | Name | Responsibility |
+|----------|------|----------------|
+| 1 | Soumyajeet Pradhan | AI Brain Integration (Groq, Gemini, Ollama) |
+| 2 | Prabhanshu Dash | Voice Recognition (STT, Vosk) |
+| 3 | Subid Sunder Barick | UI/UX Design, Frontend |
+| 4 | Suman Bhuyan | Core Engine, Memory System |
+| 5 | Siddhanto Goswami | Project Lead, Backend |
 
 ---
 
-## 📝 Commit Guidelines
+## Project Structure
 
-Each commit should be credited to the correct team member. Use this pattern:
+```
+INTELLI_AI/
+├── main.py              - Eel web server
+├── run.py               - Application entry
+├── command.py           - Voice command processor
+├── www/                 - Web UI
+│   ├── index.html       - Main interface
+│   ├── main.js         - Frontend logic
+│   ├── style.css       - Glass-morphism styles
+│   └── assets/         - Images, audio
+├── intelli/            - Core modules
+│   └── core/
+│       ├── brain.py     - AI model integration
+│       ├── speech.py   - Text-to-speech
+│       ├── memory.py   - Conversation memory
+│       └── config.py    - Configuration
+├── docs/               - Project documentation
+├── tests/              - Unit tests
+└── requirements.txt    - Python dependencies
+```
 
+---
+
+## Development Setup
+
+### Prerequisites
+- Python 3.10+
+- Git
+- API keys (Groq, Gemini, Ollama)
+
+### Setup Commands
 ```bash
-# Set your identity for this commit
-git config user.name "Your Name"
-git config user.email "your@email"
+# Clone
+git clone https://github.com/siddhanto658/intelli_ai.git
+cd intelli_ai
 
-# Make changes, then commit
+# Create venv
+python -m venv venv
+
+# Activate (Windows)
+venv\Scripts\activate
+
+# Activate (Linux/Mac)
+source venv/bin/activate
+
+# Install
+pip install -r requirements.txt
+```
+
+---
+
+## Coding Standards
+
+### Python
+- Follow PEP 8
+- Use type hints where possible
+- Document functions with docstrings
+
+### JavaScript
+- Use ES6+ features
+- Keep code modular
+
+---
+
+## Git Workflow
+
+### Making Changes
+```bash
+# Create branch
+git checkout -b feature/your-feature
+
+# Make changes
+# ...
+
+# Commit
 git add .
 git commit -m "feat: Add new feature"
+
+# Push
+git push origin feature/your-feature
+```
+
+### Merge to Main
+```bash
+# Pull latest
+git pull origin main
+
+# Resolve any conflicts
 
 # Push
 git push origin main
 ```
 
-### Commit Message Format
-```
-type: description
-
-- type: feat, fix, docs, refactor, test
-- Keep messages short and clear
-```
-
 ---
 
-## 🏗️ Project Structure
+## Testing
 
-```
-intelli_ai/
-├── www/          # Web UI (HTML/CSS/JS)
-├── intelli/      # Core AI modules
-├── docs/         # Documentation
-└── main.py       # Entry point
+### Run Tests
+```bash
+pytest tests/
 ```
 
 ---
 
-## 🔧 Setting Up Development Environment
+## Communication
 
-1. Clone the repo
-2. Create virtual environment:
-   ```bash
-   python -m venv venv
-   venv\Scripts\activate  # Windows
-   source venv/bin/activate  # Linux/Mac
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Run in development mode:
-   ```bash
-   python run.py
-   ```
+- Weekly meetings
+- GitHub Issues for bugs
+- Discord for quick discussions
 
 ---
 
-## 📋 Team Members
+## License
 
-| Name | GitHub | Role |
-|------|-------|------|
-| Soumyajeet Pradhan | @soumyajitpradhan3373 | AI Brain |
-| Prabhanshu Dash | @PrabhanshuDash | Voice Recognition |
-| Subid Sunder Barick | @Subid-int | UI/UX |
-| Suman Bhuyan | @bhuniyasuman448-gif | Core Engine |
-| Siddhanto Goswami | @siddhanto658 | Project Lead |
-
----
-
-## 📧 Contact
-
-- Issues: Open on GitHub
-- Email: team@intelli.ai
-
----
-
-*Thank you for contributing!*
+MIT License

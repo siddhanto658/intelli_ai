@@ -8,7 +8,7 @@ INTELLI is a voice-controlled AI desktop assistant powered by Groq, featuring wa
 
 ## ⚡ Features
 
-- **Wake Word Detection** - Say "INTELLI" or "Computer" to activate
+- **Wake Word Detection** - Say "INTELLI" or "BLUEBERRY" to activate
 - **Voice Commands** - Natural language voice input
 - **Streaming AI Responses** - Real-time text generation via Groq API
 - **Multilingual Support** - English, Hindi, Tamil, Telugu, Bengali, and more

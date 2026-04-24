@@ -3,8 +3,7 @@
 <div align="center">
 
 ### Department of Computer Science & Engineering
-### [Your College Name]
-### [University Name]
+### Government College of engineering Keonjhar 
 
 ---
 
@@ -18,13 +17,13 @@
 
 **Submitted By:**
 
-| Roll No. | Name | Enrollment No. |
-|----------|------|----------------|
-| 1 | Soumyajeet Pradhan | EN22105001 |
-| 2 | Prabhanshu Dash | EN22105002 |
-| 3 | Subid Sunder Barick | EN22105003 |
-| 4 | Suman Bhuyan | EN22105004 |
-| 5 | Siddhanto Goswami | EN22105005 |
+| Serial. | Name |
+|----------|------|
+| 1 | Soumyajeet Pradhan | 
+| 2 | Prabhanshu Dash | 
+| 3 | Subid Sunder Barick | 
+| 4 | Suman Bhuyan | 
+| 5 | Siddhanto Goswami |
 
 **Submitted To:** Department of Computer Science & Engineering
 

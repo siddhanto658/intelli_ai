@@ -22,7 +22,7 @@
 | 1 | Soumyajeet Pradhan | 
 | 2 | Prabhanshu Dash | 
 | 3 | Subid Sunder Barick | 
-| 4 | Suman Bhuyan | 
+| 4 | Suman Bhuniya | 
 | 5 | Siddhanto Goswami |
 
 **Submitted To:** Department of Computer Science & Engineering
